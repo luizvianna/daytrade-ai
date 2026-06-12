@@ -3,6 +3,7 @@ import Backtesting from "./Backtesting";
 import PaperTrading from "./PaperTrading";
 import Login from "./Login";
 import Chat from "./Chat";
+import Alertas from "./Alertas";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -12,12 +13,10 @@ const keepProxyAwake = () => {
   setInterval(ping, 10 * 60 * 1000);
 };
 
-// Ativos expandidos
 const ACOES = ["PETR4","VALE3","ITUB4","BBDC4","MGLU3","WEGE3","ABEV3","B3SA3","RENT3","SUZB3","GGBR4","EMBR3","RADL3","EQTL3","SBSP3","VIVT3","LREN3","HAPV3"];
 const FIIS  = ["HGLG11","KNRI11","MXRF11","XPML11","BCFF11","VISC11","BRCO11","RBRF11","IRDM11","KNCR11"];
 const ETFS  = ["IVVB11","BOVA11","HASH11","SMAL11","DIVO11","GOLD11","XFIX11","FIXA11"];
 const CRIPTO = ["BTC-USD","ETH-USD","BNB-USD","SOL-USD","ADA-USD"];
-
 const TODOS_ATIVOS = [...ACOES, ...FIIS, ...ETFS, ...CRIPTO];
 
 const CATEGORIAS = [
@@ -180,18 +179,16 @@ function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemPrompt: `Você é um analista de investimentos especialista em ${isCripto ? "criptomoedas" : isFII ? "FIIs brasileiros" : isETF ? "ETFs" : "ações da B3"}. Responda APENAS JSON válido.`,
-          prompt: `Ativo: ${asset} | Tipo: ${isCripto ? "Cripto" : isFII ? "FII" : isETF ? "ETF" : "Ação"} | Preço: R$${price.toFixed(2)} | Tendência: ${trend} (${bullCandles}/20) | Último candle: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)} | SL: ${stopLoss}% | TP: ${takeProfit}% | Timeframe: ${interval}
-Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise completa em 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"${isCripto||isETF ? "curto/médio" : isFII ? "longo prazo" : "daytrade/swing"}","score":0-10}`
+          prompt: `Ativo: ${asset} | Tipo: ${isCripto ? "Cripto" : isFII ? "FII" : isETF ? "ETF" : "Ação"} | Preço: R$${price.toFixed(2)} | Tendência: ${trend} (${bullCandles}/20) | Último: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)} | SL: ${stopLoss}% | TP: ${takeProfit}% | TF: ${interval}
+Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"daytrade|swing|longo prazo","score":0-10}`
         }),
       });
 
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || "Erro na IA");
+      if (!data.success) throw new Error(data.error || "Erro");
       const parsed = data.data;
       const time = new Date().toLocaleTimeString("pt-BR");
-
-      const newLog = { id: Date.now(), time, asset, signal: parsed.signal, price, confidence: parsed.confidence, bestInterval: parsed.bestInterval, reasoning: `[${parsed.confidence}% | ${parsed.bestInterval} | Score:${parsed.score}/10] ${parsed.reasoning}`, entry: parsed.entry || price, sl: parsed.sl, tp: parsed.tp, horizonte: parsed.horizonte };
-      setLogs(prev => [newLog, ...prev].slice(0, 20));
+      setLogs(prev => [{ id: Date.now(), time, asset, signal: parsed.signal, price, confidence: parsed.confidence, bestInterval: parsed.bestInterval, reasoning: `[${parsed.confidence}% | ${parsed.bestInterval} | Score:${parsed.score}/10] ${parsed.reasoning}`, entry: parsed.entry || price, sl: parsed.sl, tp: parsed.tp, horizonte: parsed.horizonte }, ...prev].slice(0, 20));
       setLastAnalysis(parsed);
       setStats(prev => ({ ops: prev.ops + 1, wins: prev.wins + (parsed.signal !== "AGUARDAR" && parsed.confidence > 65 ? 1 : 0), pnl: prev.pnl + (parsed.signal === "COMPRA" ? (Math.random() * 2 - 0.4) : 0) }));
       if (parsed.bestInterval && parsed.bestInterval !== interval) setInterval(parsed.bestInterval);
@@ -212,8 +209,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
 
   return (
     <div style={{ padding: isMobile ? "12px" : "20px", maxWidth: "1200px", margin: "0 auto" }}>
-
-      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: "10px", marginBottom: "14px" }}>
         {[
           { label: "PREÇO", value: currentPrice ? `R$ ${currentPrice.toFixed(2)}` : "...", sub: priceChange !== null ? `${priceChange >= 0 ? "+" : ""}${priceChange.toFixed(2)}%` : "", color: priceColor },
@@ -233,8 +228,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
         <div>
           <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
             <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>CONFIGURAÇÃO</div>
-
-            {/* Categorias */}
             <div style={{ marginBottom: "10px" }}>
               <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "6px" }}>Categoria</label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "4px" }}>
@@ -246,8 +239,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
                 ))}
               </div>
             </div>
-
-            {/* Ativo */}
             <div style={{ marginBottom: "10px" }}>
               <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>Ativo</label>
               <select value={asset} onChange={e => setAsset(e.target.value)} disabled={running}
@@ -255,8 +246,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
                 {ativosCategoria.map(a => <option key={a} value={a}>{a} {allPrices[a] ? `· R$${allPrices[a].price?.toFixed(2)}` : ""}</option>)}
               </select>
             </div>
-
-            {/* Timeframe */}
             <div style={{ marginBottom: "10px" }}>
               <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>Timeframe</label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "3px" }}>
@@ -268,8 +257,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
                 ))}
               </div>
             </div>
-
-            {/* SL e TP */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
               {[{ label: "Stop Loss %", val: stopLoss, set: setStopLoss }, { label: "Take Profit %", val: takeProfit, set: setTakeProfit }].map((f, i) => (
                 <div key={i}>
@@ -279,7 +266,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
                 </div>
               ))}
             </div>
-
             <button onClick={() => setRunning(r => !r)}
               style={{ width: "100%", marginBottom: "8px", background: running ? "#ff4d6d22" : `linear-gradient(135deg,${corCategoria},#006eff)`, color: running ? "#ff4d6d" : "#000", border: running ? "1px solid #ff4d6d55" : "none", borderRadius: "10px", padding: "13px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>
               {running ? "⏹ PARAR IA" : "▶ INICIAR IA"}
@@ -290,7 +276,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
             </button>
           </div>
 
-          {/* Último sinal */}
           {logs[0] && (
             <div style={{ background: "#0d1320", border: `1px solid ${logs[0].signal === "COMPRA" ? "#00e5a044" : logs[0].signal === "VENDA" ? "#ff4d6d44" : "#ffd60a44"}`, borderRadius: "12px", padding: "14px", marginBottom: "12px" }}>
               <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>ÚLTIMO SINAL</div>
@@ -300,7 +285,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
             </div>
           )}
 
-          {/* Mercado por categoria */}
           <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "14px" }}>
             <button onClick={() => setShowPrices(p => !p)}
               style={{ width: "100%", background: "none", border: "none", color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", cursor: "pointer", display: "flex", justifyContent: "space-between", padding: 0 }}>
@@ -326,7 +310,6 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
         </div>
 
         <div>
-          {/* Gráfico */}
           <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
               <div>
@@ -345,20 +328,16 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
             <CandleChart candles={candles} width={isMobile ? 340 : 700} height={isMobile ? 140 : 200} />
           </div>
 
-          {/* Log */}
           <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", maxHeight: isMobile ? "280px" : "350px", overflowY: "auto" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>
-              LOG DE ANÁLISES {logs.length > 0 && `(${logs.length})`}
-            </div>
+            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>LOG {logs.length > 0 && `(${logs.length})`}</div>
             {logs.length === 0 ? (
-              <div style={{ color: "#2a2a2a", fontSize: "13px", textAlign: "center", padding: "30px 0" }}>{running ? "Aguardando análise..." : "Inicie a IA para ver os sinais"}</div>
+              <div style={{ color: "#2a2a2a", fontSize: "13px", textAlign: "center", padding: "30px 0" }}>{running ? "Aguardando..." : "Inicie a IA"}</div>
             ) : logs.map(l => (
               <div key={l.id} style={{ borderLeft: `3px solid ${l.signal === "COMPRA" ? "#00e5a0" : l.signal === "VENDA" ? "#ff4d6d" : "#ffd60a"}`, paddingLeft: "10px", marginBottom: "12px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", flexWrap: "wrap" }}>
                   <span style={{ color: "#555", fontSize: "10px", fontFamily: "monospace" }}>{l.time}</span>
                   <Badge type={l.signal} />
                   <span style={{ color: "#fff", fontWeight: "700", fontSize: "12px" }}>{l.asset}</span>
-                  <span style={{ color: "#aaa", fontSize: "11px" }}>R$ {l.price?.toFixed(2)}</span>
                 </div>
                 <p style={{ color: "#ccc", fontSize: "11px", lineHeight: "1.6", margin: 0 }}>{l.reasoning}</p>
               </div>
@@ -368,7 +347,7 @@ Analise e responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestIn
       </div>
 
       <div style={{ marginTop: "12px", padding: "10px 14px", background: "#0d1320", border: "1px solid #ff4d6d22", borderRadius: "10px" }}>
-        <span style={{ color: "#555", fontSize: "11px" }}>⚠️ Sistema educacional. Ações · FIIs · ETFs · Cripto · Dados: Brapi ⚡ + Yahoo Finance</span>
+        <span style={{ color: "#555", fontSize: "11px" }}>⚠️ Sistema educacional · Ações · FIIs · ETFs · Cripto · Dados: Brapi ⚡</span>
       </div>
     </div>
   );
@@ -396,14 +375,14 @@ export default function App() {
   }, [autenticado]);
 
   const handleLogout = () => { sessionStorage.removeItem("tradeai_auth"); setAutenticado(false); };
-
   if (!autenticado) return <Login onLogin={() => setAutenticado(true)} />;
 
   const PAGES = [
     { id: "dashboard",    label: isMobile ? "📈" : "📈 Dashboard" },
     { id: "chat",         label: isMobile ? "💬" : "💬 Chat IA" },
+    { id: "alertas",      label: isMobile ? "🔔" : "🔔 Alertas" },
     { id: "backtesting",  label: isMobile ? "📊" : "📊 Backtesting" },
-    { id: "papertrading", label: isMobile ? "🏦" : "🏦 Paper Trading" },
+    { id: "papertrading", label: isMobile ? "🏦" : "🏦 Paper" },
   ];
 
   return (
@@ -416,18 +395,16 @@ export default function App() {
         .pulse { animation: pulse 2s infinite; } @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
       `}</style>
 
-      {/* Header */}
-      <div style={{ background: "#0a0f1a", borderBottom: "1px solid #1e2d45", padding: isMobile ? "10px 14px" : "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+      <div style={{ background: "#0a0f1a", borderBottom: "1px solid #1e2d45", padding: isMobile ? "10px 12px" : "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{ width: "28px", height: "28px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "7px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px" }}>⚡</div>
           {!isMobile && <div style={{ fontWeight: "700", fontSize: "14px" }}>TRADE<span style={{ color: "#00e5a0" }}>AI</span></div>}
         </div>
 
-        {/* Navegação */}
         <div style={{ display: "flex", gap: "2px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "3px" }}>
           {PAGES.map(nav => (
             <button key={nav.id} onClick={() => setPage(nav.id)}
-              style={{ background: page === nav.id ? "#00e5a015" : "transparent", border: page === nav.id ? "1px solid #00e5a033" : "1px solid transparent", color: page === nav.id ? "#00e5a0" : "#555", borderRadius: "7px", padding: isMobile ? "7px 10px" : "7px 14px", fontSize: isMobile ? "15px" : "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ background: page === nav.id ? "#00e5a015" : "transparent", border: page === nav.id ? "1px solid #00e5a033" : "1px solid transparent", color: page === nav.id ? "#00e5a0" : "#555", borderRadius: "7px", padding: isMobile ? "7px 9px" : "7px 12px", fontSize: isMobile ? "14px" : "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
               {nav.label}
             </button>
           ))}
@@ -454,6 +431,7 @@ export default function App() {
 
       <div style={{ display: page === "dashboard"    ? "block" : "none" }}><Dashboard /></div>
       <div style={{ display: page === "chat"         ? "block" : "none" }}><Chat /></div>
+      <div style={{ display: page === "alertas"      ? "block" : "none" }}><Alertas /></div>
       <div style={{ display: page === "backtesting"  ? "block" : "none" }}><Backtesting /></div>
       <div style={{ display: page === "papertrading" ? "block" : "none" }}><PaperTrading /></div>
     </div>
