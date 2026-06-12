@@ -4,6 +4,7 @@ import PaperTrading from "./PaperTrading";
 import Login from "./Login";
 import Chat from "./Chat";
 import Alertas from "./Alertas";
+import Score from "./Score";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -13,27 +14,27 @@ const keepProxyAwake = () => {
   setInterval(ping, 10 * 60 * 1000);
 };
 
-const ACOES = ["PETR4","VALE3","ITUB4","BBDC4","MGLU3","WEGE3","ABEV3","B3SA3","RENT3","SUZB3","GGBR4","EMBR3","RADL3","EQTL3","SBSP3","VIVT3","LREN3","HAPV3"];
-const FIIS  = ["HGLG11","KNRI11","MXRF11","XPML11","BCFF11","VISC11","BRCO11","RBRF11","IRDM11","KNCR11"];
-const ETFS  = ["IVVB11","BOVA11","HASH11","SMAL11","DIVO11","GOLD11","XFIX11","FIXA11"];
+const ACOES  = ["PETR4","VALE3","ITUB4","BBDC4","MGLU3","WEGE3","ABEV3","B3SA3","RENT3","SUZB3","GGBR4","EMBR3","RADL3","EQTL3","SBSP3","VIVT3","LREN3","HAPV3"];
+const FIIS   = ["HGLG11","KNRI11","MXRF11","XPML11","BCFF11","VISC11","BRCO11","RBRF11","IRDM11","KNCR11"];
+const ETFS   = ["IVVB11","BOVA11","HASH11","SMAL11","DIVO11","GOLD11","XFIX11","FIXA11"];
 const CRIPTO = ["BTC-USD","ETH-USD","BNB-USD","SOL-USD","ADA-USD"];
-const TODOS_ATIVOS = [...ACOES, ...FIIS, ...ETFS, ...CRIPTO];
+const TODOS_ATIVOS = [...ACOES,...FIIS,...ETFS,...CRIPTO];
 
 const CATEGORIAS = [
   { label: "Ações", ativos: ACOES, cor: "#00e5a0" },
-  { label: "FIIs", ativos: FIIS, cor: "#6af" },
-  { label: "ETFs", ativos: ETFS, cor: "#ffd60a" },
-  { label: "Cripto", ativos: CRIPTO, cor: "#ff9f43" },
+  { label: "FIIs",  ativos: FIIS,  cor: "#6af" },
+  { label: "ETFs",  ativos: ETFS,  cor: "#ffd60a" },
+  { label: "Cripto",ativos: CRIPTO,cor: "#ff9f43" },
 ];
 
 const INTERVALS = [
-  { value: "1m", label: "1m", range: "1d" },
-  { value: "5m", label: "5m", range: "5d" },
+  { value: "1m",  label: "1m",  range: "1d" },
+  { value: "5m",  label: "5m",  range: "5d" },
   { value: "15m", label: "15m", range: "5d" },
-  { value: "1h", label: "1h", range: "1mo" },
-  { value: "1d", label: "1D", range: "3mo" },
-  { value: "1wk", label: "1S", range: "1y" },
-  { value: "1mo", label: "1M", range: "5y" },
+  { value: "1h",  label: "1h",  range: "1mo" },
+  { value: "1d",  label: "1D",  range: "3mo" },
+  { value: "1wk", label: "1S",  range: "1y" },
+  { value: "1mo", label: "1M",  range: "5y" },
 ];
 
 function useIsMobile() {
@@ -65,8 +66,7 @@ function CandleChart({ candles, width = 600, height = 180 }) {
   const w = width - pad.l - pad.r;
   const h = height - pad.t - pad.b;
   const prices = last.flatMap(c => [c.high, c.low]);
-  const minP = Math.min(...prices);
-  const maxP = Math.max(...prices);
+  const minP = Math.min(...prices), maxP = Math.max(...prices);
   const range = maxP - minP || 1;
   const cw = w / last.length;
   const py = p => pad.t + h - ((p - minP) / range) * h;
@@ -150,9 +150,9 @@ function Dashboard() {
 
   const fetchAllPrices = useCallback(async () => {
     try {
-      const res = await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0, 20).join(",")}`);
+      const res = await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0,20).join(",")}`);
       setAllPrices(await res.json());
-    } catch (e) { console.error(e); }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -173,24 +173,21 @@ function Dashboard() {
       const isCripto = CRIPTO.includes(asset);
       const isFII = FIIS.includes(asset);
       const isETF = ETFS.includes(asset);
-
       const response = await fetch(`${PROXY}/api/ai/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemPrompt: `Você é um analista de investimentos especialista em ${isCripto ? "criptomoedas" : isFII ? "FIIs brasileiros" : isETF ? "ETFs" : "ações da B3"}. Responda APENAS JSON válido.`,
-          prompt: `Ativo: ${asset} | Tipo: ${isCripto ? "Cripto" : isFII ? "FII" : isETF ? "ETF" : "Ação"} | Preço: R$${price.toFixed(2)} | Tendência: ${trend} (${bullCandles}/20) | Último: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)} | SL: ${stopLoss}% | TP: ${takeProfit}% | TF: ${interval}
-Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"daytrade|swing|longo prazo","score":0-10}`
+          systemPrompt: `Analista especialista em ${isCripto?"criptomoedas":isFII?"FIIs":isETF?"ETFs":"ações B3"}. Responda APENAS JSON válido.`,
+          prompt: `Ativo: ${asset} | Tipo: ${isCripto?"Cripto":isFII?"FII":isETF?"ETF":"Ação"} | Preço: R$${price.toFixed(2)} | Tendência: ${trend} (${bullCandles}/20) | Último: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)} | SL:${stopLoss}% | TP:${takeProfit}% | TF:${interval}
+Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"daytrade|swing|longo prazo","score":0-10}`,
         }),
       });
-
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || "Erro");
+      if (!data.success) throw new Error(data.error);
       const parsed = data.data;
       const time = new Date().toLocaleTimeString("pt-BR");
-      setLogs(prev => [{ id: Date.now(), time, asset, signal: parsed.signal, price, confidence: parsed.confidence, bestInterval: parsed.bestInterval, reasoning: `[${parsed.confidence}% | ${parsed.bestInterval} | Score:${parsed.score}/10] ${parsed.reasoning}`, entry: parsed.entry || price, sl: parsed.sl, tp: parsed.tp, horizonte: parsed.horizonte }, ...prev].slice(0, 20));
+      setLogs(prev => [{ id: Date.now(), time, asset, signal: parsed.signal, price, confidence: parsed.confidence, bestInterval: parsed.bestInterval, reasoning: `[${parsed.confidence}% | ${parsed.bestInterval} | Score:${parsed.score}/10] ${parsed.reasoning}`, horizonte: parsed.horizonte }, ...prev].slice(0, 20));
       setLastAnalysis(parsed);
-      setStats(prev => ({ ops: prev.ops + 1, wins: prev.wins + (parsed.signal !== "AGUARDAR" && parsed.confidence > 65 ? 1 : 0), pnl: prev.pnl + (parsed.signal === "COMPRA" ? (Math.random() * 2 - 0.4) : 0) }));
+      setStats(prev => ({ ops: prev.ops+1, wins: prev.wins+(parsed.signal!=="AGUARDAR"&&parsed.confidence>65?1:0), pnl: prev.pnl+(parsed.signal==="COMPRA"?(Math.random()*2-0.4):0) }));
       if (parsed.bestInterval && parsed.bestInterval !== interval) setInterval(parsed.bestInterval);
     } catch (e) { console.error(e); }
     finally { setLoadingAI(false); }
@@ -205,101 +202,101 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
   }, [running, asset, interval]);
 
   const priceColor = priceChange === null ? "#fff" : priceChange >= 0 ? "#00e5a0" : "#ff4d6d";
-  const winRate = stats.ops > 0 ? ((stats.wins / stats.ops) * 100).toFixed(1) : "0.0";
+  const winRate = stats.ops > 0 ? ((stats.wins/stats.ops)*100).toFixed(1) : "0.0";
 
   return (
-    <div style={{ padding: isMobile ? "12px" : "20px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: "10px", marginBottom: "14px" }}>
+    <div style={{ padding: isMobile?"12px":"20px", maxWidth:"1200px", margin:"0 auto" }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr 1fr":"repeat(4,1fr)", gap:"10px", marginBottom:"14px" }}>
         {[
-          { label: "PREÇO", value: currentPrice ? `R$ ${currentPrice.toFixed(2)}` : "...", sub: priceChange !== null ? `${priceChange >= 0 ? "+" : ""}${priceChange.toFixed(2)}%` : "", color: priceColor },
-          { label: "OPERAÇÕES", value: stats.ops, sub: "analisadas", color: "#fff" },
-          { label: "WIN RATE", value: `${winRate}%`, sub: `${stats.wins}W`, color: parseFloat(winRate) > 50 ? "#00e5a0" : "#ff4d6d" },
-          { label: "SCORE IA", value: lastAnalysis?.score !== undefined ? `${lastAnalysis.score}/10` : "—", sub: lastAnalysis?.horizonte || "aguardando", color: "#ffd60a" },
-        ].map((s, i) => (
-          <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "12px 14px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
-            <div style={{ color: s.color, fontSize: isMobile ? "18px" : "22px", fontWeight: "700" }}>{s.value}</div>
-            <div style={{ color: "#444", fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
+          { label:"PREÇO", value: currentPrice?`R$ ${currentPrice.toFixed(2)}`:"...", sub: priceChange!==null?`${priceChange>=0?"+":""}${priceChange.toFixed(2)}%`:"", color: priceColor },
+          { label:"OPERAÇÕES", value: stats.ops, sub:"analisadas", color:"#fff" },
+          { label:"WIN RATE", value:`${winRate}%`, sub:`${stats.wins}W`, color: parseFloat(winRate)>50?"#00e5a0":"#ff4d6d" },
+          { label:"SCORE IA", value: lastAnalysis?.score!==undefined?`${lastAnalysis.score}/10`:"—", sub: lastAnalysis?.horizonte||"aguardando", color:"#ffd60a" },
+        ].map((s,i)=>(
+          <div key={i} style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"10px", padding:"12px 14px" }}>
+            <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"4px" }}>{s.label}</div>
+            <div style={{ color:s.color, fontSize: isMobile?"18px":"22px", fontWeight:"700" }}>{s.value}</div>
+            <div style={{ color:"#444", fontSize:"10px", marginTop:"2px" }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "300px 1fr", gap: "14px" }}>
+      <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"300px 1fr", gap:"14px" }}>
         <div>
-          <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>CONFIGURAÇÃO</div>
-            <div style={{ marginBottom: "10px" }}>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "6px" }}>Categoria</label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "4px" }}>
-                {CATEGORIAS.map(cat => (
-                  <button key={cat.label} onClick={() => { setCategoria(cat.label); setAsset(cat.ativos[0]); }}
-                    style={{ background: categoria === cat.label ? `${cat.cor}22` : "#111a27", border: `1px solid ${categoria === cat.label ? cat.cor : "#1e2d45"}`, color: categoria === cat.label ? cat.cor : "#555", borderRadius: "6px", padding: "6px 4px", fontSize: "10px", fontWeight: "700", cursor: "pointer" }}>
+          <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"16px", marginBottom:"12px" }}>
+            <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"12px" }}>CONFIGURAÇÃO</div>
+            <div style={{ marginBottom:"10px" }}>
+              <label style={{ display:"block", color:"#666", fontSize:"11px", marginBottom:"6px" }}>Categoria</label>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"4px" }}>
+                {CATEGORIAS.map(cat=>(
+                  <button key={cat.label} onClick={()=>{setCategoria(cat.label);setAsset(cat.ativos[0]);}}
+                    style={{ background: categoria===cat.label?`${cat.cor}22`:"#111a27", border:`1px solid ${categoria===cat.label?cat.cor:"#1e2d45"}`, color: categoria===cat.label?cat.cor:"#555", borderRadius:"6px", padding:"6px 4px", fontSize:"10px", fontWeight:"700", cursor:"pointer" }}>
                     {cat.label}
                   </button>
                 ))}
               </div>
             </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>Ativo</label>
-              <select value={asset} onChange={e => setAsset(e.target.value)} disabled={running}
-                style={{ width: "100%", background: "#111a27", border: `1px solid ${corCategoria}44`, color: "#e0e6f0", borderRadius: "8px", padding: "10px 12px", fontSize: "14px", fontFamily: "monospace" }}>
-                {ativosCategoria.map(a => <option key={a} value={a}>{a} {allPrices[a] ? `· R$${allPrices[a].price?.toFixed(2)}` : ""}</option>)}
+            <div style={{ marginBottom:"10px" }}>
+              <label style={{ display:"block", color:"#666", fontSize:"11px", marginBottom:"4px" }}>Ativo</label>
+              <select value={asset} onChange={e=>setAsset(e.target.value)} disabled={running}
+                style={{ width:"100%", background:"#111a27", border:`1px solid ${corCategoria}44`, color:"#e0e6f0", borderRadius:"8px", padding:"10px 12px", fontSize:"14px", fontFamily:"monospace" }}>
+                {ativosCategoria.map(a=><option key={a} value={a}>{a} {allPrices[a]?`· R$${allPrices[a].price?.toFixed(2)}`:""}</option>)}
               </select>
             </div>
-            <div style={{ marginBottom: "10px" }}>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>Timeframe</label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: "3px" }}>
-                {INTERVALS.map(iv => (
-                  <button key={iv.value} onClick={() => setInterval(iv.value)}
-                    style={{ background: interval === iv.value ? `${corCategoria}22` : "#111a27", border: `1px solid ${interval === iv.value ? corCategoria : "#1e2d45"}`, color: interval === iv.value ? corCategoria : "#555", borderRadius: "5px", padding: "6px 2px", fontSize: "9px", fontWeight: "600", cursor: "pointer" }}>
+            <div style={{ marginBottom:"10px" }}>
+              <label style={{ display:"block", color:"#666", fontSize:"11px", marginBottom:"4px" }}>Timeframe</label>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:"3px" }}>
+                {INTERVALS.map(iv=>(
+                  <button key={iv.value} onClick={()=>setInterval(iv.value)}
+                    style={{ background: interval===iv.value?`${corCategoria}22`:"#111a27", border:`1px solid ${interval===iv.value?corCategoria:"#1e2d45"}`, color: interval===iv.value?corCategoria:"#555", borderRadius:"5px", padding:"6px 2px", fontSize:"9px", fontWeight:"600", cursor:"pointer" }}>
                     {iv.label}
                   </button>
                 ))}
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
-              {[{ label: "Stop Loss %", val: stopLoss, set: setStopLoss }, { label: "Take Profit %", val: takeProfit, set: setTakeProfit }].map((f, i) => (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", marginBottom:"12px" }}>
+              {[{label:"Stop Loss %",val:stopLoss,set:setStopLoss},{label:"Take Profit %",val:takeProfit,set:setTakeProfit}].map((f,i)=>(
                 <div key={i}>
-                  <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>{f.label}</label>
-                  <input type="number" value={f.val} onChange={e => f.set(e.target.value)} disabled={running} step="0.1"
-                    style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 12px", fontSize: "14px", fontFamily: "monospace" }} />
+                  <label style={{ display:"block", color:"#666", fontSize:"11px", marginBottom:"4px" }}>{f.label}</label>
+                  <input type="number" value={f.val} onChange={e=>f.set(e.target.value)} disabled={running} step="0.1"
+                    style={{ width:"100%", background:"#111a27", border:"1px solid #1e2d45", color:"#e0e6f0", borderRadius:"8px", padding:"10px 12px", fontSize:"14px", fontFamily:"monospace" }} />
                 </div>
               ))}
             </div>
-            <button onClick={() => setRunning(r => !r)}
-              style={{ width: "100%", marginBottom: "8px", background: running ? "#ff4d6d22" : `linear-gradient(135deg,${corCategoria},#006eff)`, color: running ? "#ff4d6d" : "#000", border: running ? "1px solid #ff4d6d55" : "none", borderRadius: "10px", padding: "13px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>
-              {running ? "⏹ PARAR IA" : "▶ INICIAR IA"}
+            <button onClick={()=>setRunning(r=>!r)}
+              style={{ width:"100%", marginBottom:"8px", background: running?"#ff4d6d22":`linear-gradient(135deg,${corCategoria},#006eff)`, color: running?"#ff4d6d":"#000", border: running?"1px solid #ff4d6d55":"none", borderRadius:"10px", padding:"13px", fontSize:"15px", fontWeight:"700", cursor:"pointer" }}>
+              {running?"⏹ PARAR IA":"▶ INICIAR IA"}
             </button>
-            <button onClick={() => fetchCandles(asset, interval)}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#888", borderRadius: "8px", padding: "9px", fontSize: "12px", cursor: "pointer" }}>
+            <button onClick={()=>fetchCandles(asset,interval)}
+              style={{ width:"100%", background:"#111a27", border:"1px solid #1e2d45", color:"#888", borderRadius:"8px", padding:"9px", fontSize:"12px", cursor:"pointer" }}>
               🔄 Atualizar
             </button>
           </div>
 
           {logs[0] && (
-            <div style={{ background: "#0d1320", border: `1px solid ${logs[0].signal === "COMPRA" ? "#00e5a044" : logs[0].signal === "VENDA" ? "#ff4d6d44" : "#ffd60a44"}`, borderRadius: "12px", padding: "14px", marginBottom: "12px" }}>
-              <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>ÚLTIMO SINAL</div>
-              <div style={{ marginBottom: "6px" }}><Badge type={logs[0].signal} /></div>
-              <p style={{ color: "#bbb", fontSize: "12px", lineHeight: "1.6", margin: 0 }}>{logs[0].reasoning}</p>
-              {logs[0].horizonte && <div style={{ color: "#555", fontSize: "10px", marginTop: "6px", fontFamily: "monospace" }}>📅 {logs[0].horizonte}</div>}
+            <div style={{ background:"#0d1320", border:`1px solid ${logs[0].signal==="COMPRA"?"#00e5a044":logs[0].signal==="VENDA"?"#ff4d6d44":"#ffd60a44"}`, borderRadius:"12px", padding:"14px", marginBottom:"12px" }}>
+              <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"8px" }}>ÚLTIMO SINAL</div>
+              <div style={{ marginBottom:"6px" }}><Badge type={logs[0].signal} /></div>
+              <p style={{ color:"#bbb", fontSize:"12px", lineHeight:"1.6", margin:0 }}>{logs[0].reasoning}</p>
+              {logs[0].horizonte && <div style={{ color:"#555", fontSize:"10px", marginTop:"6px", fontFamily:"monospace" }}>📅 {logs[0].horizonte}</div>}
             </div>
           )}
 
-          <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "14px" }}>
-            <button onClick={() => setShowPrices(p => !p)}
-              style={{ width: "100%", background: "none", border: "none", color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", cursor: "pointer", display: "flex", justifyContent: "space-between", padding: 0 }}>
-              <span>MERCADO AO VIVO ⚡</span><span>{showPrices ? "▲" : "▼"}</span>
+          <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"14px" }}>
+            <button onClick={()=>setShowPrices(p=>!p)}
+              style={{ width:"100%", background:"none", border:"none", color:"#444", fontSize:"10px", fontFamily:"monospace", letterSpacing:"0.1em", cursor:"pointer", display:"flex", justifyContent:"space-between", padding:0 }}>
+              <span>MERCADO AO VIVO ⚡</span><span>{showPrices?"▲":"▼"}</span>
             </button>
-            {(showPrices || !isMobile) && (
-              <div style={{ marginTop: "10px" }}>
-                {ativosCategoria.slice(0, 8).map(a => {
-                  const p = allPrices[a];
+            {(showPrices||!isMobile) && (
+              <div style={{ marginTop:"10px" }}>
+                {ativosCategoria.slice(0,8).map(a=>{
+                  const p=allPrices[a];
                   return (
-                    <div key={a} onClick={() => setAsset(a)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid #0d1827", cursor: "pointer" }}>
-                      <span style={{ fontFamily: "monospace", fontSize: "12px", color: a === asset ? corCategoria : "#888", fontWeight: a === asset ? "700" : "400" }}>{a}</span>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontFamily: "monospace", fontSize: "12px", color: "#ccc" }}>{p?.price ? `R$ ${p.price.toFixed(2)}` : "..."}</div>
-                        {p?.change !== undefined && <div style={{ fontSize: "10px", color: p.change >= 0 ? "#00e5a0" : "#ff4d6d" }}>{p.change >= 0 ? "+" : ""}{p.change.toFixed(2)}%</div>}
+                    <div key={a} onClick={()=>setAsset(a)} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:"1px solid #0d1827", cursor:"pointer" }}>
+                      <span style={{ fontFamily:"monospace", fontSize:"12px", color:a===asset?corCategoria:"#888", fontWeight:a===asset?"700":"400" }}>{a}</span>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontFamily:"monospace", fontSize:"12px", color:"#ccc" }}>{p?.price?`R$ ${p.price.toFixed(2)}`:"..."}</div>
+                        {p?.change!==undefined&&<div style={{ fontSize:"10px", color:p.change>=0?"#00e5a0":"#ff4d6d" }}>{p.change>=0?"+":""}{p.change.toFixed(2)}%</div>}
                       </div>
                     </div>
                   );
@@ -310,44 +307,43 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
         </div>
 
         <div>
-          <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"16px", marginBottom:"12px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ color: corCategoria, fontSize: "10px", fontFamily: "monospace", background: `${corCategoria}22`, border: `1px solid ${corCategoria}44`, borderRadius: "4px", padding: "2px 6px" }}>{categoria}</span>
-                  <span style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>{asset} · {INTERVALS.find(i => i.value === interval)?.label}</span>
+                <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                  <span style={{ color:corCategoria, fontSize:"10px", fontFamily:"monospace", background:`${corCategoria}22`, border:`1px solid ${corCategoria}44`, borderRadius:"4px", padding:"2px 6px" }}>{categoria}</span>
+                  <span style={{ color:"#444", fontSize:"9px", fontFamily:"monospace" }}>{asset} · {INTERVALS.find(i=>i.value===interval)?.label}</span>
                 </div>
-                <div style={{ color: priceColor, fontSize: isMobile ? "20px" : "24px", fontWeight: "700", fontFamily: "monospace", marginTop: "4px" }}>{currentPrice ? `R$ ${currentPrice.toFixed(2)}` : "..."}</div>
-                {lastUpdate && <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace" }}>{lastUpdate}</div>}
+                <div style={{ color:priceColor, fontSize: isMobile?"20px":"24px", fontWeight:"700", fontFamily:"monospace", marginTop:"4px" }}>{currentPrice?`R$ ${currentPrice.toFixed(2)}`:"..."}</div>
+                {lastUpdate&&<div style={{ color:"#333", fontSize:"10px", fontFamily:"monospace" }}>{lastUpdate}</div>}
               </div>
-              <div style={{ textAlign: "right" }}>
-                {loadingData && <div style={{ color: "#555", fontSize: "11px" }}>🔄</div>}
-                {loadingAI && <div style={{ color: corCategoria, fontSize: "11px" }}>🤖 analisando...</div>}
+              <div style={{ textAlign:"right" }}>
+                {loadingData&&<div style={{ color:"#555", fontSize:"11px" }}>🔄</div>}
+                {loadingAI&&<div style={{ color:corCategoria, fontSize:"11px" }}>🤖 analisando...</div>}
               </div>
             </div>
-            <CandleChart candles={candles} width={isMobile ? 340 : 700} height={isMobile ? 140 : 200} />
+            <CandleChart candles={candles} width={isMobile?340:700} height={isMobile?140:200} />
           </div>
 
-          <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", maxHeight: isMobile ? "280px" : "350px", overflowY: "auto" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>LOG {logs.length > 0 && `(${logs.length})`}</div>
-            {logs.length === 0 ? (
-              <div style={{ color: "#2a2a2a", fontSize: "13px", textAlign: "center", padding: "30px 0" }}>{running ? "Aguardando..." : "Inicie a IA"}</div>
-            ) : logs.map(l => (
-              <div key={l.id} style={{ borderLeft: `3px solid ${l.signal === "COMPRA" ? "#00e5a0" : l.signal === "VENDA" ? "#ff4d6d" : "#ffd60a"}`, paddingLeft: "10px", marginBottom: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", flexWrap: "wrap" }}>
-                  <span style={{ color: "#555", fontSize: "10px", fontFamily: "monospace" }}>{l.time}</span>
+          <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"16px", maxHeight: isMobile?"280px":"350px", overflowY:"auto" }}>
+            <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"12px" }}>LOG {logs.length>0&&`(${logs.length})`}</div>
+            {logs.length===0?(
+              <div style={{ color:"#2a2a2a", fontSize:"13px", textAlign:"center", padding:"30px 0" }}>{running?"Aguardando...":"Inicie a IA"}</div>
+            ):logs.map(l=>(
+              <div key={l.id} style={{ borderLeft:`3px solid ${l.signal==="COMPRA"?"#00e5a0":l.signal==="VENDA"?"#ff4d6d":"#ffd60a"}`, paddingLeft:"10px", marginBottom:"12px" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"4px", flexWrap:"wrap" }}>
+                  <span style={{ color:"#555", fontSize:"10px", fontFamily:"monospace" }}>{l.time}</span>
                   <Badge type={l.signal} />
-                  <span style={{ color: "#fff", fontWeight: "700", fontSize: "12px" }}>{l.asset}</span>
+                  <span style={{ color:"#fff", fontWeight:"700", fontSize:"12px" }}>{l.asset}</span>
                 </div>
-                <p style={{ color: "#ccc", fontSize: "11px", lineHeight: "1.6", margin: 0 }}>{l.reasoning}</p>
+                <p style={{ color:"#ccc", fontSize:"11px", lineHeight:"1.6", margin:0 }}>{l.reasoning}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      <div style={{ marginTop: "12px", padding: "10px 14px", background: "#0d1320", border: "1px solid #ff4d6d22", borderRadius: "10px" }}>
-        <span style={{ color: "#555", fontSize: "11px" }}>⚠️ Sistema educacional · Ações · FIIs · ETFs · Cripto · Dados: Brapi ⚡</span>
+      <div style={{ marginTop:"12px", padding:"10px 14px", background:"#0d1320", border:"1px solid #ff4d6d22", borderRadius:"10px" }}>
+        <span style={{ color:"#555", fontSize:"11px" }}>⚠️ Sistema educacional · Ações · FIIs · ETFs · Cripto · Dados: Brapi ⚡</span>
       </div>
     </div>
   );
@@ -364,10 +360,7 @@ export default function App() {
     if (!autenticado) return;
     keepProxyAwake();
     const check = () => {
-      fetch(`${PROXY}/health`)
-        .then(r => r.json())
-        .then(() => { setProxyOk(true); setProxyWaking(false); })
-        .catch(() => { setProxyOk(false); setProxyWaking(true); });
+      fetch(`${PROXY}/health`).then(r=>r.json()).then(()=>{setProxyOk(true);setProxyWaking(false);}).catch(()=>{setProxyOk(false);setProxyWaking(true);});
     };
     check();
     const i = setInterval(check, 15000);
@@ -375,65 +368,67 @@ export default function App() {
   }, [autenticado]);
 
   const handleLogout = () => { sessionStorage.removeItem("tradeai_auth"); setAutenticado(false); };
-  if (!autenticado) return <Login onLogin={() => setAutenticado(true)} />;
+  if (!autenticado) return <Login onLogin={()=>setAutenticado(true)} />;
 
   const PAGES = [
-    { id: "dashboard",    label: isMobile ? "📈" : "📈 Dashboard" },
-    { id: "chat",         label: isMobile ? "💬" : "💬 Chat IA" },
-    { id: "alertas",      label: isMobile ? "🔔" : "🔔 Alertas" },
-    { id: "backtesting",  label: isMobile ? "📊" : "📊 Backtesting" },
-    { id: "papertrading", label: isMobile ? "🏦" : "🏦 Paper" },
+    { id:"dashboard",    label: isMobile?"📈":"📈 Dashboard" },
+    { id:"chat",         label: isMobile?"💬":"💬 Chat IA" },
+    { id:"score",        label: isMobile?"⭐":"⭐ Score" },
+    { id:"alertas",      label: isMobile?"🔔":"🔔 Alertas" },
+    { id:"backtesting",  label: isMobile?"📊":"📊 Backtest" },
+    { id:"papertrading", label: isMobile?"🏦":"🏦 Paper" },
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080c14", fontFamily: "'DM Sans','Segoe UI',sans-serif", color: "#e0e6f0" }}>
+    <div style={{ minHeight:"100vh", background:"#080c14", fontFamily:"'DM Sans','Segoe UI',sans-serif", color:"#e0e6f0" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-        select, input, textarea { outline: none; }
-        .pulse { animation: pulse 2s infinite; } @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+        select,input,textarea{outline:none}
+        .pulse{animation:pulse 2s infinite} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
       `}</style>
 
-      <div style={{ background: "#0a0f1a", borderBottom: "1px solid #1e2d45", padding: isMobile ? "10px 12px" : "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "28px", height: "28px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "7px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px" }}>⚡</div>
-          {!isMobile && <div style={{ fontWeight: "700", fontSize: "14px" }}>TRADE<span style={{ color: "#00e5a0" }}>AI</span></div>}
+      <div style={{ background:"#0a0f1a", borderBottom:"1px solid #1e2d45", padding: isMobile?"10px 10px":"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+          <div style={{ width:"28px", height:"28px", background:"linear-gradient(135deg,#00e5a0,#006eff)", borderRadius:"7px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px" }}>⚡</div>
+          {!isMobile&&<div style={{ fontWeight:"700", fontSize:"14px" }}>TRADE<span style={{ color:"#00e5a0" }}>AI</span></div>}
         </div>
 
-        <div style={{ display: "flex", gap: "2px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "3px" }}>
-          {PAGES.map(nav => (
-            <button key={nav.id} onClick={() => setPage(nav.id)}
-              style={{ background: page === nav.id ? "#00e5a015" : "transparent", border: page === nav.id ? "1px solid #00e5a033" : "1px solid transparent", color: page === nav.id ? "#00e5a0" : "#555", borderRadius: "7px", padding: isMobile ? "7px 9px" : "7px 12px", fontSize: isMobile ? "14px" : "12px", fontWeight: "600", cursor: "pointer", fontFamily: "inherit" }}>
+        <div style={{ display:"flex", gap:"2px", background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"10px", padding:"3px", overflowX:"auto" }}>
+          {PAGES.map(nav=>(
+            <button key={nav.id} onClick={()=>setPage(nav.id)}
+              style={{ background: page===nav.id?"#00e5a015":"transparent", border: page===nav.id?"1px solid #00e5a033":"1px solid transparent", color: page===nav.id?"#00e5a0":"#555", borderRadius:"7px", padding: isMobile?"7px 8px":"7px 12px", fontSize: isMobile?"14px":"12px", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
               {nav.label}
             </button>
           ))}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: proxyOk === null ? "#555" : proxyOk ? "#00e5a0" : "#ffd60a" }} className={proxyWaking ? "pulse" : ""} />
-            {!isMobile && <span style={{ color: proxyOk ? "#00e5a0" : "#ffd60a", fontSize: "10px", fontFamily: "monospace" }}>{proxyOk ? "ONLINE" : "ACORDANDO..."}</span>}
+        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
+            <div style={{ width:"7px", height:"7px", borderRadius:"50%", background: proxyOk===null?"#555":proxyOk?"#00e5a0":"#ffd60a" }} className={proxyWaking?"pulse":""} />
+            {!isMobile&&<span style={{ color:proxyOk?"#00e5a0":"#ffd60a", fontSize:"10px", fontFamily:"monospace" }}>{proxyOk?"ONLINE":"ACORDANDO..."}</span>}
           </div>
           <button onClick={handleLogout}
-            style={{ background: "#ff4d6d15", border: "1px solid #ff4d6d33", color: "#ff4d6d", borderRadius: "6px", padding: "5px 10px", fontSize: "11px", cursor: "pointer" }}>
-            🔒{!isMobile && " Sair"}
+            style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d33", color:"#ff4d6d", borderRadius:"6px", padding:"5px 10px", fontSize:"11px", cursor:"pointer" }}>
+            🔒{!isMobile&&" Sair"}
           </button>
         </div>
       </div>
 
-      {proxyWaking && (
-        <div style={{ background: "#ffd60a11", border: "1px solid #ffd60a33", margin: "10px 14px", borderRadius: "10px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+      {proxyWaking&&(
+        <div style={{ background:"#ffd60a11", border:"1px solid #ffd60a33", margin:"10px 14px", borderRadius:"10px", padding:"10px 14px", display:"flex", alignItems:"center", gap:"8px" }}>
           <span className="pulse">⏳</span>
-          <span style={{ color: "#ffd60a", fontSize: "12px" }}>Servidor acordando... Aguarde até 60 segundos.</span>
+          <span style={{ color:"#ffd60a", fontSize:"12px" }}>Servidor acordando... Aguarde até 60 segundos.</span>
         </div>
       )}
 
-      <div style={{ display: page === "dashboard"    ? "block" : "none" }}><Dashboard /></div>
-      <div style={{ display: page === "chat"         ? "block" : "none" }}><Chat /></div>
-      <div style={{ display: page === "alertas"      ? "block" : "none" }}><Alertas /></div>
-      <div style={{ display: page === "backtesting"  ? "block" : "none" }}><Backtesting /></div>
-      <div style={{ display: page === "papertrading" ? "block" : "none" }}><PaperTrading /></div>
+      <div style={{ display:page==="dashboard"   ?"block":"none" }}><Dashboard /></div>
+      <div style={{ display:page==="chat"        ?"block":"none" }}><Chat /></div>
+      <div style={{ display:page==="score"       ?"block":"none" }}><Score /></div>
+      <div style={{ display:page==="alertas"     ?"block":"none" }}><Alertas /></div>
+      <div style={{ display:page==="backtesting" ?"block":"none" }}><Backtesting /></div>
+      <div style={{ display:page==="papertrading"?"block":"none" }}><PaperTrading /></div>
     </div>
   );
 }
