@@ -5,6 +5,7 @@ import Login from "./Login";
 import Chat from "./Chat";
 import Alertas from "./Alertas";
 import Score from "./Score";
+import Relatorio from "./Relatorio";
 import ConfigNotificacoes, { useNotificacoes, registrarSW } from "./Notificacoes";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
@@ -59,14 +60,14 @@ function checkSession() {
 }
 
 function CandleChart({ candles, width=600, height=180 }) {
-  if (!candles || candles.length===0) return <div style={{ height, display:"flex", alignItems:"center", justifyContent:"center", color:"#333" }}>Carregando...</div>;
-  const last = candles.slice(-50);
-  const pad = { l:8, r:8, t:10, b:20 };
-  const w = width-pad.l-pad.r, h = height-pad.t-pad.b;
-  const prices = last.flatMap(c=>[c.high,c.low]);
+  if (!candles||candles.length===0) return <div style={{ height, display:"flex", alignItems:"center", justifyContent:"center", color:"#333" }}>Carregando...</div>;
+  const last=candles.slice(-50);
+  const pad={l:8,r:8,t:10,b:20};
+  const w=width-pad.l-pad.r, h=height-pad.t-pad.b;
+  const prices=last.flatMap(c=>[c.high,c.low]);
   const minP=Math.min(...prices), maxP=Math.max(...prices), range=maxP-minP||1;
-  const cw = w/last.length;
-  const py = p => pad.t+h-((p-minP)/range)*h;
+  const cw=w/last.length;
+  const py=p=>pad.t+h-((p-minP)/range)*h;
   return (
     <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display:"block" }}>
       {last.map((c,i)=>{
@@ -82,103 +83,96 @@ function CandleChart({ candles, width=600, height=180 }) {
 }
 
 function Badge({ type }) {
-  const map = { COMPRA:{bg:"#00e5a022",border:"#00e5a0",text:"#00e5a0",label:"▲ COMPRA"}, VENDA:{bg:"#ff4d6d22",border:"#ff4d6d",text:"#ff4d6d",label:"▼ VENDA"}, AGUARDAR:{bg:"#ffd60a22",border:"#ffd60a",text:"#ffd60a",label:"◆ AGUARDAR"} };
+  const map={COMPRA:{bg:"#00e5a022",border:"#00e5a0",text:"#00e5a0",label:"▲ COMPRA"},VENDA:{bg:"#ff4d6d22",border:"#ff4d6d",text:"#ff4d6d",label:"▼ VENDA"},AGUARDAR:{bg:"#ffd60a22",border:"#ffd60a",text:"#ffd60a",label:"◆ AGUARDAR"}};
   const s=map[type]||map.AGUARDAR;
   return <span style={{ background:s.bg, border:`1px solid ${s.border}`, color:s.text, borderRadius:"6px", padding:"3px 10px", fontSize:"11px", fontWeight:"700", fontFamily:"monospace" }}>{s.label}</span>;
 }
 
 function Dashboard() {
-  const isMobile = useIsMobile();
-  const { notificar, permissao } = useNotificacoes();
-  const [categoria, setCategoria] = useState("Ações");
-  const [asset, setAsset] = useState("PETR4");
-  const [interval, setInterval] = useState("5m");
-  const [candles, setCandles] = useState([]);
-  const [currentPrice, setCurrentPrice] = useState(null);
-  const [priceChange, setPriceChange] = useState(null);
-  const [allPrices, setAllPrices] = useState({});
-  const [stopLoss, setStopLoss] = useState("1.5");
-  const [takeProfit, setTakeProfit] = useState("3.0");
-  const [running, setRunning] = useState(false);
-  const [logs, setLogs] = useState([]);
-  const [loadingData, setLoadingData] = useState(false);
-  const [loadingAI, setLoadingAI] = useState(false);
-  const [stats, setStats] = useState({ ops:0, wins:0, pnl:0 });
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const [showPrices, setShowPrices] = useState(false);
-  const [lastAnalysis, setLastAnalysis] = useState(null);
-  const candlesRef = useRef([]);
-  const priceRef = useRef(null);
-  candlesRef.current = candles;
-  priceRef.current = currentPrice;
+  const isMobile=useIsMobile();
+  const { notificar, permissao }=useNotificacoes();
+  const [categoria, setCategoria]=useState("Ações");
+  const [asset, setAsset]=useState("PETR4");
+  const [interval, setInterval]=useState("5m");
+  const [candles, setCandles]=useState([]);
+  const [currentPrice, setCurrentPrice]=useState(null);
+  const [priceChange, setPriceChange]=useState(null);
+  const [allPrices, setAllPrices]=useState({});
+  const [stopLoss, setStopLoss]=useState("1.5");
+  const [takeProfit, setTakeProfit]=useState("3.0");
+  const [running, setRunning]=useState(false);
+  const [logs, setLogs]=useState([]);
+  const [loadingData, setLoadingData]=useState(false);
+  const [loadingAI, setLoadingAI]=useState(false);
+  const [stats, setStats]=useState({ops:0,wins:0,pnl:0});
+  const [lastUpdate, setLastUpdate]=useState(null);
+  const [showPrices, setShowPrices]=useState(false);
+  const [lastAnalysis, setLastAnalysis]=useState(null);
+  const candlesRef=useRef([]);
+  const priceRef=useRef(null);
+  candlesRef.current=candles;
+  priceRef.current=currentPrice;
 
-  const ativosCategoria = CATEGORIAS.find(c=>c.label===categoria)?.ativos||ACOES;
-  const corCategoria = CATEGORIAS.find(c=>c.label===categoria)?.cor||"#00e5a0";
+  const ativosCategoria=CATEGORIAS.find(c=>c.label===categoria)?.ativos||ACOES;
+  const corCategoria=CATEGORIAS.find(c=>c.label===categoria)?.cor||"#00e5a0";
 
-  const fetchCandles = useCallback(async (assetName, iv) => {
+  const fetchCandles=useCallback(async(assetName,iv)=>{
     setLoadingData(true);
     try {
-      const ivConf = INTERVALS.find(i=>i.value===iv);
-      const res = await fetch(`${PROXY}/api/candles?ticker=${assetName}&interval=${iv}&range=${ivConf?.range||"1d"}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const ivConf=INTERVALS.find(i=>i.value===iv);
+      const res=await fetch(`${PROXY}/api/candles?ticker=${assetName}&interval=${iv}&range=${ivConf?.range||"1d"}`);
+      const data=await res.json();
+      if(data.error) throw new Error(data.error);
       setCandles(data.candles); setCurrentPrice(data.currentPrice);
       setPriceChange(data.currentPrice&&data.previousClose?((data.currentPrice-data.previousClose)/data.previousClose*100):null);
       setLastUpdate(new Date().toLocaleTimeString("pt-BR"));
     } catch(e){console.error(e);}
     finally{setLoadingData(false);}
-  }, []);
+  },[]);
 
-  const fetchAllPrices = useCallback(async () => {
-    try { const res=await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0,20).join(",")}`); setAllPrices(await res.json()); } catch {}
-  }, []);
+  const fetchAllPrices=useCallback(async()=>{
+    try{const res=await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0,20).join(",")}`);setAllPrices(await res.json());}catch{}
+  },[]);
 
-  useEffect(() => { setCandles([]); setCurrentPrice(null); fetchCandles(asset,interval); }, [asset,interval,fetchCandles]);
+  useEffect(()=>{setCandles([]);setCurrentPrice(null);fetchCandles(asset,interval);},[asset,interval,fetchCandles]);
 
-  const analyzeWithAI = useCallback(async () => {
+  const analyzeWithAI=useCallback(async()=>{
     const cands=candlesRef.current, price=priceRef.current;
-    if (!cands.length||!price) return;
+    if(!cands.length||!price) return;
     setLoadingAI(true);
     try {
       const last20=cands.slice(-20), bullCandles=last20.filter(c=>c.close>c.open).length;
       const trend=bullCandles>=12?"ALTA":bullCandles<=8?"BAIXA":"LATERAL";
       const lastC=cands[cands.length-1];
       const isCripto=CRIPTO.includes(asset), isFII=FIIS.includes(asset), isETF=ETFS.includes(asset);
-      const response = await fetch(`${PROXY}/api/ai/analyze`, {
+      const response=await fetch(`${PROXY}/api/ai/analyze`,{
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
+        body:JSON.stringify({
           systemPrompt:`Analista especialista em ${isCripto?"criptomoedas":isFII?"FIIs":isETF?"ETFs":"ações B3"}. Responda APENAS JSON válido.`,
           prompt:`Ativo:${asset}|Tipo:${isCripto?"Cripto":isFII?"FII":isETF?"ETF":"Ação"}|Preço:R$${price.toFixed(2)}|Tendência:${trend}(${bullCandles}/20)|Último:A${lastC.open.toFixed(2)}F${lastC.close.toFixed(2)}|SL:${stopLoss}%|TP:${takeProfit}%|TF:${interval}\nResponda:{"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"daytrade|swing|longo prazo","score":0-10}`,
         }),
       });
       const data=await response.json();
-      if (!data.success) throw new Error(data.error);
+      if(!data.success) throw new Error(data.error);
       const parsed=data.data, time=new Date().toLocaleTimeString("pt-BR");
-      const newLog={ id:Date.now(), time, asset, signal:parsed.signal, price, confidence:parsed.confidence, bestInterval:parsed.bestInterval, reasoning:`[${parsed.confidence}%|${parsed.bestInterval}|Score:${parsed.score}/10] ${parsed.reasoning}`, horizonte:parsed.horizonte };
-      setLogs(prev=>[newLog,...prev].slice(0,20));
+      setLogs(prev=>[{id:Date.now(),time,asset,signal:parsed.signal,price,confidence:parsed.confidence,bestInterval:parsed.bestInterval,reasoning:`[${parsed.confidence}%|${parsed.bestInterval}|Score:${parsed.score}/10] ${parsed.reasoning}`,horizonte:parsed.horizonte},...prev].slice(0,20));
       setLastAnalysis(parsed);
-      setStats(prev=>({ ops:prev.ops+1, wins:prev.wins+(parsed.signal!=="AGUARDAR"&&parsed.confidence>65?1:0), pnl:prev.pnl+(parsed.signal==="COMPRA"?(Math.random()*2-0.4):0) }));
-      if (parsed.bestInterval&&parsed.bestInterval!==interval) setInterval(parsed.bestInterval);
-
-      // Notificação push para sinais fortes
-      if (parsed.signal!=="AGUARDAR"&&parsed.confidence>=75&&permissao==="granted") {
-        notificar({
-          title:`${parsed.signal==="COMPRA"?"▲":"▼"} Sinal ${parsed.signal} — ${asset}`,
-          body:`Confiança: ${parsed.confidence}% | Preço: R$${price.toFixed(2)} | Score: ${parsed.score}/10`,
-          tag:`sinal-${asset}`,
-        });
+      setStats(prev=>({ops:prev.ops+1,wins:prev.wins+(parsed.signal!=="AGUARDAR"&&parsed.confidence>65?1:0),pnl:prev.pnl+(parsed.signal==="COMPRA"?(Math.random()*2-0.4):0)}));
+      if(parsed.bestInterval&&parsed.bestInterval!==interval) setInterval(parsed.bestInterval);
+      if(parsed.signal!=="AGUARDAR"&&parsed.confidence>=75&&permissao==="granted"){
+        notificar({title:`${parsed.signal==="COMPRA"?"▲":"▼"} Sinal ${parsed.signal} — ${asset}`,body:`Confiança: ${parsed.confidence}% | Preço: R$${price.toFixed(2)} | Score: ${parsed.score}/10`,tag:`sinal-${asset}`});
       }
     } catch(e){console.error(e);}
     finally{setLoadingAI(false);}
-  }, [asset,interval,stopLoss,takeProfit,notificar,permissao]);
+  },[asset,interval,stopLoss,takeProfit,notificar,permissao]);
 
-  useEffect(() => {
-    if (!running) return;
+  useEffect(()=>{
+    if(!running) return;
     const d=setInterval(()=>{fetchCandles(asset,interval);fetchAllPrices();},60000);
     const a=setInterval(()=>analyzeWithAI(),45000);
     fetchAllPrices(); analyzeWithAI();
-    return ()=>{clearInterval(d);clearInterval(a);};
-  }, [running,asset,interval]);
+    return()=>{clearInterval(d);clearInterval(a);};
+  },[running,asset,interval]);
 
   const priceColor=priceChange===null?"#fff":priceChange>=0?"#00e5a0":"#ff4d6d";
   const winRate=stats.ops>0?((stats.wins/stats.ops)*100).toFixed(1):"0.0";
@@ -329,39 +323,40 @@ function Dashboard() {
 }
 
 export default function App() {
-  const [autenticado, setAutenticado] = useState(checkSession);
-  const [page, setPage] = useState("dashboard");
-  const [proxyOk, setProxyOk] = useState(null);
-  const [proxyWaking, setProxyWaking] = useState(false);
-  const [showNotifConfig, setShowNotifConfig] = useState(false);
-  const isMobile = useIsMobile();
-  const { permissao, ativar } = useNotificacoes();
+  const [autenticado, setAutenticado]=useState(checkSession);
+  const [page, setPage]=useState("dashboard");
+  const [proxyOk, setProxyOk]=useState(null);
+  const [proxyWaking, setProxyWaking]=useState(false);
+  const [showNotifConfig, setShowNotifConfig]=useState(false);
+  const isMobile=useIsMobile();
+  const { permissao }=useNotificacoes();
 
-  useEffect(() => {
-    if (!autenticado) return;
+  useEffect(()=>{
+    if(!autenticado) return;
     keepProxyAwake();
     registrarSW();
-    const check = () => {
+    const check=()=>{
       fetch(`${PROXY}/health`).then(r=>r.json()).then(()=>{setProxyOk(true);setProxyWaking(false);}).catch(()=>{setProxyOk(false);setProxyWaking(true);});
     };
     check();
-    const i = setInterval(check, 15000);
-    return () => clearInterval(i);
-  }, [autenticado]);
+    const i=setInterval(check,15000);
+    return()=>clearInterval(i);
+  },[autenticado]);
 
-  const handleLogout = () => { sessionStorage.removeItem("tradeai_auth"); setAutenticado(false); };
-  if (!autenticado) return <Login onLogin={()=>setAutenticado(true)}/>;
+  const handleLogout=()=>{sessionStorage.removeItem("tradeai_auth");setAutenticado(false);};
+  if(!autenticado) return <Login onLogin={()=>setAutenticado(true)}/>;
 
-  const PAGES = [
-    { id:"dashboard",    label:isMobile?"📈":"📈 Dashboard" },
-    { id:"chat",         label:isMobile?"💬":"💬 Chat IA" },
-    { id:"score",        label:isMobile?"⭐":"⭐ Score" },
-    { id:"alertas",      label:isMobile?"🔔":"🔔 Alertas" },
-    { id:"backtesting",  label:isMobile?"📊":"📊 Backtest" },
-    { id:"papertrading", label:isMobile?"🏦":"🏦 Paper" },
+  const PAGES=[
+    {id:"dashboard",    label:isMobile?"📈":"📈 Dashboard"},
+    {id:"chat",         label:isMobile?"💬":"💬 Chat IA"},
+    {id:"score",        label:isMobile?"⭐":"⭐ Score"},
+    {id:"alertas",      label:isMobile?"🔔":"🔔 Alertas"},
+    {id:"relatorio",    label:isMobile?"📅":"📅 Relatório"},
+    {id:"backtesting",  label:isMobile?"📊":"📊 Backtest"},
+    {id:"papertrading", label:isMobile?"🏦":"🏦 Paper"},
   ];
 
-  const notifColor = permissao==="granted"?"#00e5a0":permissao==="denied"?"#ff4d6d":"#ffd60a";
+  const notifColor=permissao==="granted"?"#00e5a0":permissao==="denied"?"#ff4d6d":"#ffd60a";
 
   return (
     <div style={{ minHeight:"100vh", background:"#080c14", fontFamily:"'DM Sans','Segoe UI',sans-serif", color:"#e0e6f0" }}>
@@ -373,22 +368,20 @@ export default function App() {
         .pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
       `}</style>
 
-      {/* Modal de configuração de notificações */}
-      {showNotifConfig && (
+      {showNotifConfig&&(
         <div style={{ position:"fixed", inset:0, background:"#000000aa", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }}
           onClick={e=>e.target===e.currentTarget&&setShowNotifConfig(false)}>
           <ConfigNotificacoes onClose={()=>setShowNotifConfig(false)}/>
         </div>
       )}
 
-      {/* Header */}
       <div style={{ background:"#0a0f1a", borderBottom:"1px solid #1e2d45", padding:isMobile?"10px 10px":"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
           <div style={{ width:"28px", height:"28px", background:"linear-gradient(135deg,#00e5a0,#006eff)", borderRadius:"7px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px" }}>⚡</div>
           {!isMobile&&<div style={{ fontWeight:"700", fontSize:"14px" }}>TRADE<span style={{ color:"#00e5a0" }}>AI</span></div>}
         </div>
 
-        <div style={{ display:"flex", gap:"2px", background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"10px", padding:"3px", overflowX:"auto" }}>
+        <div style={{ display:"flex", gap:"2px", background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"10px", padding:"3px", overflowX:"auto", maxWidth:isMobile?"calc(100vw - 120px)":"auto" }}>
           {PAGES.map(nav=>(
             <button key={nav.id} onClick={()=>setPage(nav.id)}
               style={{ background:page===nav.id?"#00e5a015":"transparent", border:page===nav.id?"1px solid #00e5a033":"1px solid transparent", color:page===nav.id?"#00e5a0":"#555", borderRadius:"7px", padding:isMobile?"7px 8px":"7px 12px", fontSize:isMobile?"14px":"12px", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
@@ -398,12 +391,10 @@ export default function App() {
         </div>
 
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-          {/* Botão de notificações */}
-          <button onClick={()=>setShowNotifConfig(true)} title="Configurar notificações"
+          <button onClick={()=>setShowNotifConfig(true)} title="Notificações"
             style={{ background:`${notifColor}15`, border:`1px solid ${notifColor}33`, color:notifColor, borderRadius:"6px", padding:"5px 8px", fontSize:"14px", cursor:"pointer" }}>
             {permissao==="granted"?"🔔":"🔕"}
           </button>
-
           <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
             <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:proxyOk===null?"#555":proxyOk?"#00e5a0":"#ffd60a" }} className={proxyWaking?"pulse":""}/>
             {!isMobile&&<span style={{ color:proxyOk?"#00e5a0":"#ffd60a", fontSize:"10px", fontFamily:"monospace" }}>{proxyOk?"ONLINE":"ACORDANDO..."}</span>}
@@ -422,7 +413,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Banner para ativar notificações */}
       {permissao==="default"&&autenticado&&(
         <div style={{ background:"#6af11", border:"1px solid #6af33", margin:"10px 14px", borderRadius:"10px", padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px" }}>
           <span style={{ color:"#6af", fontSize:"12px" }}>📱 Ative as notificações push para receber alertas no celular!</span>
@@ -437,6 +427,7 @@ export default function App() {
       <div style={{ display:page==="chat"        ?"block":"none" }}><Chat/></div>
       <div style={{ display:page==="score"       ?"block":"none" }}><Score/></div>
       <div style={{ display:page==="alertas"     ?"block":"none" }}><Alertas/></div>
+      <div style={{ display:page==="relatorio"   ?"block":"none" }}><Relatorio/></div>
       <div style={{ display:page==="backtesting" ?"block":"none" }}><Backtesting/></div>
       <div style={{ display:page==="papertrading"?"block":"none" }}><PaperTrading/></div>
     </div>
