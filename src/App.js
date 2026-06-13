@@ -5,6 +5,7 @@ import Login from "./Login";
 import Chat from "./Chat";
 import Alertas from "./Alertas";
 import Score from "./Score";
+import ConfigNotificacoes, { useNotificacoes, registrarSW } from "./Notificacoes";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -21,20 +22,20 @@ const CRIPTO = ["BTC-USD","ETH-USD","BNB-USD","SOL-USD","ADA-USD"];
 const TODOS_ATIVOS = [...ACOES,...FIIS,...ETFS,...CRIPTO];
 
 const CATEGORIAS = [
-  { label: "Ações", ativos: ACOES, cor: "#00e5a0" },
-  { label: "FIIs",  ativos: FIIS,  cor: "#6af" },
-  { label: "ETFs",  ativos: ETFS,  cor: "#ffd60a" },
-  { label: "Cripto",ativos: CRIPTO,cor: "#ff9f43" },
+  { label:"Ações", ativos:ACOES,  cor:"#00e5a0" },
+  { label:"FIIs",  ativos:FIIS,   cor:"#6af" },
+  { label:"ETFs",  ativos:ETFS,   cor:"#ffd60a" },
+  { label:"Cripto",ativos:CRIPTO, cor:"#ff9f43" },
 ];
 
 const INTERVALS = [
-  { value: "1m",  label: "1m",  range: "1d" },
-  { value: "5m",  label: "5m",  range: "5d" },
-  { value: "15m", label: "15m", range: "5d" },
-  { value: "1h",  label: "1h",  range: "1mo" },
-  { value: "1d",  label: "1D",  range: "3mo" },
-  { value: "1wk", label: "1S",  range: "1y" },
-  { value: "1mo", label: "1M",  range: "5y" },
+  { value:"1m",  label:"1m",  range:"1d" },
+  { value:"5m",  label:"5m",  range:"5d" },
+  { value:"15m", label:"15m", range:"5d" },
+  { value:"1h",  label:"1h",  range:"1mo" },
+  { value:"1d",  label:"1D",  range:"3mo" },
+  { value:"1wk", label:"1S",  range:"1y" },
+  { value:"1mo", label:"1M",  range:"5y" },
 ];
 
 function useIsMobile() {
@@ -57,57 +58,38 @@ function checkSession() {
   } catch { return false; }
 }
 
-function CandleChart({ candles, width = 600, height = 180 }) {
-  if (!candles || candles.length === 0) return (
-    <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "#333" }}>Carregando...</div>
-  );
+function CandleChart({ candles, width=600, height=180 }) {
+  if (!candles || candles.length===0) return <div style={{ height, display:"flex", alignItems:"center", justifyContent:"center", color:"#333" }}>Carregando...</div>;
   const last = candles.slice(-50);
-  const pad = { l: 8, r: 8, t: 10, b: 20 };
-  const w = width - pad.l - pad.r;
-  const h = height - pad.t - pad.b;
-  const prices = last.flatMap(c => [c.high, c.low]);
-  const minP = Math.min(...prices), maxP = Math.max(...prices);
-  const range = maxP - minP || 1;
-  const cw = w / last.length;
-  const py = p => pad.t + h - ((p - minP) / range) * h;
+  const pad = { l:8, r:8, t:10, b:20 };
+  const w = width-pad.l-pad.r, h = height-pad.t-pad.b;
+  const prices = last.flatMap(c=>[c.high,c.low]);
+  const minP=Math.min(...prices), maxP=Math.max(...prices), range=maxP-minP||1;
+  const cw = w/last.length;
+  const py = p => pad.t+h-((p-minP)/range)*h;
   return (
-    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
-      {last.map((c, i) => {
-        const x = pad.l + i * cw + cw * 0.1;
-        const bw = Math.max(1, cw * 0.8);
-        const isUp = c.close >= c.open;
-        const color = isUp ? "#00e5a0" : "#ff4d6d";
-        const bodyTop = py(Math.max(c.open, c.close));
-        const bodyH = Math.max(1, py(Math.min(c.open, c.close)) - bodyTop);
-        const cx = x + bw / 2;
-        return (
-          <g key={i}>
-            <line x1={cx} y1={py(c.high)} x2={cx} y2={py(c.low)} stroke={color} strokeWidth="1" />
-            <rect x={x} y={bodyTop} width={bw} height={bodyH} fill={color} rx="1" />
-          </g>
-        );
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display:"block" }}>
+      {last.map((c,i)=>{
+        const x=pad.l+i*cw+cw*0.1, bw=Math.max(1,cw*0.8), isUp=c.close>=c.open;
+        const color=isUp?"#00e5a0":"#ff4d6d";
+        const bodyTop=py(Math.max(c.open,c.close)), bodyH=Math.max(1,py(Math.min(c.open,c.close))-bodyTop);
+        const cx=x+bw/2;
+        return <g key={i}><line x1={cx} y1={py(c.high)} x2={cx} y2={py(c.low)} stroke={color} strokeWidth="1"/><rect x={x} y={bodyTop} width={bw} height={bodyH} fill={color} rx="1"/></g>;
       })}
-      <line x1={pad.l} y1={height - pad.b} x2={width - pad.r} y2={height - pad.b} stroke="#ffffff18" />
+      <line x1={pad.l} y1={height-pad.b} x2={width-pad.r} y2={height-pad.b} stroke="#ffffff18"/>
     </svg>
   );
 }
 
 function Badge({ type }) {
-  const map = {
-    COMPRA:   { bg: "#00e5a022", border: "#00e5a0", text: "#00e5a0", label: "▲ COMPRA" },
-    VENDA:    { bg: "#ff4d6d22", border: "#ff4d6d", text: "#ff4d6d", label: "▼ VENDA" },
-    AGUARDAR: { bg: "#ffd60a22", border: "#ffd60a", text: "#ffd60a", label: "◆ AGUARDAR" },
-  };
-  const s = map[type] || map.AGUARDAR;
-  return (
-    <span style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.text, borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontWeight: "700", fontFamily: "monospace" }}>
-      {s.label}
-    </span>
-  );
+  const map = { COMPRA:{bg:"#00e5a022",border:"#00e5a0",text:"#00e5a0",label:"▲ COMPRA"}, VENDA:{bg:"#ff4d6d22",border:"#ff4d6d",text:"#ff4d6d",label:"▼ VENDA"}, AGUARDAR:{bg:"#ffd60a22",border:"#ffd60a",text:"#ffd60a",label:"◆ AGUARDAR"} };
+  const s=map[type]||map.AGUARDAR;
+  return <span style={{ background:s.bg, border:`1px solid ${s.border}`, color:s.text, borderRadius:"6px", padding:"3px 10px", fontSize:"11px", fontWeight:"700", fontFamily:"monospace" }}>{s.label}</span>;
 }
 
 function Dashboard() {
   const isMobile = useIsMobile();
+  const { notificar, permissao } = useNotificacoes();
   const [categoria, setCategoria] = useState("Ações");
   const [asset, setAsset] = useState("PETR4");
   const [interval, setInterval] = useState("5m");
@@ -121,7 +103,7 @@ function Dashboard() {
   const [logs, setLogs] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [stats, setStats] = useState({ ops: 0, wins: 0, pnl: 0 });
+  const [stats, setStats] = useState({ ops:0, wins:0, pnl:0 });
   const [lastUpdate, setLastUpdate] = useState(null);
   const [showPrices, setShowPrices] = useState(false);
   const [lastAnalysis, setLastAnalysis] = useState(null);
@@ -130,98 +112,95 @@ function Dashboard() {
   candlesRef.current = candles;
   priceRef.current = currentPrice;
 
-  const ativosCategoria = CATEGORIAS.find(c => c.label === categoria)?.ativos || ACOES;
-  const corCategoria = CATEGORIAS.find(c => c.label === categoria)?.cor || "#00e5a0";
+  const ativosCategoria = CATEGORIAS.find(c=>c.label===categoria)?.ativos||ACOES;
+  const corCategoria = CATEGORIAS.find(c=>c.label===categoria)?.cor||"#00e5a0";
 
   const fetchCandles = useCallback(async (assetName, iv) => {
     setLoadingData(true);
     try {
-      const ivConf = INTERVALS.find(i => i.value === iv);
-      const res = await fetch(`${PROXY}/api/candles?ticker=${assetName}&interval=${iv}&range=${ivConf?.range || "1d"}`);
+      const ivConf = INTERVALS.find(i=>i.value===iv);
+      const res = await fetch(`${PROXY}/api/candles?ticker=${assetName}&interval=${iv}&range=${ivConf?.range||"1d"}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setCandles(data.candles);
-      setCurrentPrice(data.currentPrice);
-      setPriceChange(data.currentPrice && data.previousClose ? ((data.currentPrice - data.previousClose) / data.previousClose * 100) : null);
+      setCandles(data.candles); setCurrentPrice(data.currentPrice);
+      setPriceChange(data.currentPrice&&data.previousClose?((data.currentPrice-data.previousClose)/data.previousClose*100):null);
       setLastUpdate(new Date().toLocaleTimeString("pt-BR"));
-    } catch (e) { console.error(e); }
-    finally { setLoadingData(false); }
+    } catch(e){console.error(e);}
+    finally{setLoadingData(false);}
   }, []);
 
   const fetchAllPrices = useCallback(async () => {
-    try {
-      const res = await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0,20).join(",")}`);
-      setAllPrices(await res.json());
-    } catch {}
+    try { const res=await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0,20).join(",")}`); setAllPrices(await res.json()); } catch {}
   }, []);
 
-  useEffect(() => {
-    setCandles([]); setCurrentPrice(null);
-    fetchCandles(asset, interval);
-  }, [asset, interval, fetchCandles]);
+  useEffect(() => { setCandles([]); setCurrentPrice(null); fetchCandles(asset,interval); }, [asset,interval,fetchCandles]);
 
   const analyzeWithAI = useCallback(async () => {
-    const cands = candlesRef.current;
-    const price = priceRef.current;
-    if (!cands.length || !price) return;
+    const cands=candlesRef.current, price=priceRef.current;
+    if (!cands.length||!price) return;
     setLoadingAI(true);
     try {
-      const last20 = cands.slice(-20);
-      const bullCandles = last20.filter(c => c.close > c.open).length;
-      const trend = bullCandles >= 12 ? "ALTA" : bullCandles <= 8 ? "BAIXA" : "LATERAL";
-      const lastC = cands[cands.length - 1];
-      const isCripto = CRIPTO.includes(asset);
-      const isFII = FIIS.includes(asset);
-      const isETF = ETFS.includes(asset);
+      const last20=cands.slice(-20), bullCandles=last20.filter(c=>c.close>c.open).length;
+      const trend=bullCandles>=12?"ALTA":bullCandles<=8?"BAIXA":"LATERAL";
+      const lastC=cands[cands.length-1];
+      const isCripto=CRIPTO.includes(asset), isFII=FIIS.includes(asset), isETF=ETFS.includes(asset);
       const response = await fetch(`${PROXY}/api/ai/analyze`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          systemPrompt: `Analista especialista em ${isCripto?"criptomoedas":isFII?"FIIs":isETF?"ETFs":"ações B3"}. Responda APENAS JSON válido.`,
-          prompt: `Ativo: ${asset} | Tipo: ${isCripto?"Cripto":isFII?"FII":isETF?"ETF":"Ação"} | Preço: R$${price.toFixed(2)} | Tendência: ${trend} (${bullCandles}/20) | Último: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)} | SL:${stopLoss}% | TP:${takeProfit}% | TF:${interval}
-Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"daytrade|swing|longo prazo","score":0-10}`,
+          systemPrompt:`Analista especialista em ${isCripto?"criptomoedas":isFII?"FIIs":isETF?"ETFs":"ações B3"}. Responda APENAS JSON válido.`,
+          prompt:`Ativo:${asset}|Tipo:${isCripto?"Cripto":isFII?"FII":isETF?"ETF":"Ação"}|Preço:R$${price.toFixed(2)}|Tendência:${trend}(${bullCandles}/20)|Último:A${lastC.open.toFixed(2)}F${lastC.close.toFixed(2)}|SL:${stopLoss}%|TP:${takeProfit}%|TF:${interval}\nResponda:{"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1m|5m|15m|1h|1d|1wk|1mo","intervalReason":"motivo","reasoning":"análise 2 frases","entry":${price},"sl":${(price*(1-parseFloat(stopLoss)/100)).toFixed(2)},"tp":${(price*(1+parseFloat(takeProfit)/100)).toFixed(2)},"horizonte":"daytrade|swing|longo prazo","score":0-10}`,
         }),
       });
-      const data = await response.json();
+      const data=await response.json();
       if (!data.success) throw new Error(data.error);
-      const parsed = data.data;
-      const time = new Date().toLocaleTimeString("pt-BR");
-      setLogs(prev => [{ id: Date.now(), time, asset, signal: parsed.signal, price, confidence: parsed.confidence, bestInterval: parsed.bestInterval, reasoning: `[${parsed.confidence}% | ${parsed.bestInterval} | Score:${parsed.score}/10] ${parsed.reasoning}`, horizonte: parsed.horizonte }, ...prev].slice(0, 20));
+      const parsed=data.data, time=new Date().toLocaleTimeString("pt-BR");
+      const newLog={ id:Date.now(), time, asset, signal:parsed.signal, price, confidence:parsed.confidence, bestInterval:parsed.bestInterval, reasoning:`[${parsed.confidence}%|${parsed.bestInterval}|Score:${parsed.score}/10] ${parsed.reasoning}`, horizonte:parsed.horizonte };
+      setLogs(prev=>[newLog,...prev].slice(0,20));
       setLastAnalysis(parsed);
-      setStats(prev => ({ ops: prev.ops+1, wins: prev.wins+(parsed.signal!=="AGUARDAR"&&parsed.confidence>65?1:0), pnl: prev.pnl+(parsed.signal==="COMPRA"?(Math.random()*2-0.4):0) }));
-      if (parsed.bestInterval && parsed.bestInterval !== interval) setInterval(parsed.bestInterval);
-    } catch (e) { console.error(e); }
-    finally { setLoadingAI(false); }
-  }, [asset, interval, stopLoss, takeProfit]);
+      setStats(prev=>({ ops:prev.ops+1, wins:prev.wins+(parsed.signal!=="AGUARDAR"&&parsed.confidence>65?1:0), pnl:prev.pnl+(parsed.signal==="COMPRA"?(Math.random()*2-0.4):0) }));
+      if (parsed.bestInterval&&parsed.bestInterval!==interval) setInterval(parsed.bestInterval);
+
+      // Notificação push para sinais fortes
+      if (parsed.signal!=="AGUARDAR"&&parsed.confidence>=75&&permissao==="granted") {
+        notificar({
+          title:`${parsed.signal==="COMPRA"?"▲":"▼"} Sinal ${parsed.signal} — ${asset}`,
+          body:`Confiança: ${parsed.confidence}% | Preço: R$${price.toFixed(2)} | Score: ${parsed.score}/10`,
+          tag:`sinal-${asset}`,
+        });
+      }
+    } catch(e){console.error(e);}
+    finally{setLoadingAI(false);}
+  }, [asset,interval,stopLoss,takeProfit,notificar,permissao]);
 
   useEffect(() => {
     if (!running) return;
-    const d = setInterval(() => { fetchCandles(asset, interval); fetchAllPrices(); }, 60000);
-    const a = setInterval(() => analyzeWithAI(), 45000);
+    const d=setInterval(()=>{fetchCandles(asset,interval);fetchAllPrices();},60000);
+    const a=setInterval(()=>analyzeWithAI(),45000);
     fetchAllPrices(); analyzeWithAI();
-    return () => { clearInterval(d); clearInterval(a); };
-  }, [running, asset, interval]);
+    return ()=>{clearInterval(d);clearInterval(a);};
+  }, [running,asset,interval]);
 
-  const priceColor = priceChange === null ? "#fff" : priceChange >= 0 ? "#00e5a0" : "#ff4d6d";
-  const winRate = stats.ops > 0 ? ((stats.wins/stats.ops)*100).toFixed(1) : "0.0";
+  const priceColor=priceChange===null?"#fff":priceChange>=0?"#00e5a0":"#ff4d6d";
+  const winRate=stats.ops>0?((stats.wins/stats.ops)*100).toFixed(1):"0.0";
 
   return (
-    <div style={{ padding: isMobile?"12px":"20px", maxWidth:"1200px", margin:"0 auto" }}>
-      <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr 1fr":"repeat(4,1fr)", gap:"10px", marginBottom:"14px" }}>
+    <div style={{ padding:isMobile?"12px":"20px", maxWidth:"1200px", margin:"0 auto" }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)", gap:"10px", marginBottom:"14px" }}>
         {[
-          { label:"PREÇO", value: currentPrice?`R$ ${currentPrice.toFixed(2)}`:"...", sub: priceChange!==null?`${priceChange>=0?"+":""}${priceChange.toFixed(2)}%`:"", color: priceColor },
-          { label:"OPERAÇÕES", value: stats.ops, sub:"analisadas", color:"#fff" },
-          { label:"WIN RATE", value:`${winRate}%`, sub:`${stats.wins}W`, color: parseFloat(winRate)>50?"#00e5a0":"#ff4d6d" },
-          { label:"SCORE IA", value: lastAnalysis?.score!==undefined?`${lastAnalysis.score}/10`:"—", sub: lastAnalysis?.horizonte||"aguardando", color:"#ffd60a" },
+          {label:"PREÇO",value:currentPrice?`R$ ${currentPrice.toFixed(2)}`:"...",sub:priceChange!==null?`${priceChange>=0?"+":""}${priceChange.toFixed(2)}%`:"",color:priceColor},
+          {label:"OPERAÇÕES",value:stats.ops,sub:"analisadas",color:"#fff"},
+          {label:"WIN RATE",value:`${winRate}%`,sub:`${stats.wins}W`,color:parseFloat(winRate)>50?"#00e5a0":"#ff4d6d"},
+          {label:"SCORE IA",value:lastAnalysis?.score!==undefined?`${lastAnalysis.score}/10`:"—",sub:lastAnalysis?.horizonte||"aguardando",color:"#ffd60a"},
         ].map((s,i)=>(
           <div key={i} style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"10px", padding:"12px 14px" }}>
             <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"4px" }}>{s.label}</div>
-            <div style={{ color:s.color, fontSize: isMobile?"18px":"22px", fontWeight:"700" }}>{s.value}</div>
+            <div style={{ color:s.color, fontSize:isMobile?"18px":"22px", fontWeight:"700" }}>{s.value}</div>
             <div style={{ color:"#444", fontSize:"10px", marginTop:"2px" }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"300px 1fr", gap:"14px" }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"300px 1fr", gap:"14px" }}>
         <div>
           <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"16px", marginBottom:"12px" }}>
             <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"12px" }}>CONFIGURAÇÃO</div>
@@ -230,7 +209,7 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
               <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"4px" }}>
                 {CATEGORIAS.map(cat=>(
                   <button key={cat.label} onClick={()=>{setCategoria(cat.label);setAsset(cat.ativos[0]);}}
-                    style={{ background: categoria===cat.label?`${cat.cor}22`:"#111a27", border:`1px solid ${categoria===cat.label?cat.cor:"#1e2d45"}`, color: categoria===cat.label?cat.cor:"#555", borderRadius:"6px", padding:"6px 4px", fontSize:"10px", fontWeight:"700", cursor:"pointer" }}>
+                    style={{ background:categoria===cat.label?`${cat.cor}22`:"#111a27", border:`1px solid ${categoria===cat.label?cat.cor:"#1e2d45"}`, color:categoria===cat.label?cat.cor:"#555", borderRadius:"6px", padding:"6px 4px", fontSize:"10px", fontWeight:"700", cursor:"pointer" }}>
                     {cat.label}
                   </button>
                 ))}
@@ -248,7 +227,7 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
               <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:"3px" }}>
                 {INTERVALS.map(iv=>(
                   <button key={iv.value} onClick={()=>setInterval(iv.value)}
-                    style={{ background: interval===iv.value?`${corCategoria}22`:"#111a27", border:`1px solid ${interval===iv.value?corCategoria:"#1e2d45"}`, color: interval===iv.value?corCategoria:"#555", borderRadius:"5px", padding:"6px 2px", fontSize:"9px", fontWeight:"600", cursor:"pointer" }}>
+                    style={{ background:interval===iv.value?`${corCategoria}22`:"#111a27", border:`1px solid ${interval===iv.value?corCategoria:"#1e2d45"}`, color:interval===iv.value?corCategoria:"#555", borderRadius:"5px", padding:"6px 2px", fontSize:"9px", fontWeight:"600", cursor:"pointer" }}>
                     {iv.label}
                   </button>
                 ))}
@@ -264,7 +243,7 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
               ))}
             </div>
             <button onClick={()=>setRunning(r=>!r)}
-              style={{ width:"100%", marginBottom:"8px", background: running?"#ff4d6d22":`linear-gradient(135deg,${corCategoria},#006eff)`, color: running?"#ff4d6d":"#000", border: running?"1px solid #ff4d6d55":"none", borderRadius:"10px", padding:"13px", fontSize:"15px", fontWeight:"700", cursor:"pointer" }}>
+              style={{ width:"100%", marginBottom:"8px", background:running?"#ff4d6d22":`linear-gradient(135deg,${corCategoria},#006eff)`, color:running?"#ff4d6d":"#000", border:running?"1px solid #ff4d6d55":"none", borderRadius:"10px", padding:"13px", fontSize:"15px", fontWeight:"700", cursor:"pointer" }}>
               {running?"⏹ PARAR IA":"▶ INICIAR IA"}
             </button>
             <button onClick={()=>fetchCandles(asset,interval)}
@@ -273,12 +252,12 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
             </button>
           </div>
 
-          {logs[0] && (
+          {logs[0]&&(
             <div style={{ background:"#0d1320", border:`1px solid ${logs[0].signal==="COMPRA"?"#00e5a044":logs[0].signal==="VENDA"?"#ff4d6d44":"#ffd60a44"}`, borderRadius:"12px", padding:"14px", marginBottom:"12px" }}>
               <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"8px" }}>ÚLTIMO SINAL</div>
-              <div style={{ marginBottom:"6px" }}><Badge type={logs[0].signal} /></div>
+              <div style={{ marginBottom:"6px" }}><Badge type={logs[0].signal}/></div>
               <p style={{ color:"#bbb", fontSize:"12px", lineHeight:"1.6", margin:0 }}>{logs[0].reasoning}</p>
-              {logs[0].horizonte && <div style={{ color:"#555", fontSize:"10px", marginTop:"6px", fontFamily:"monospace" }}>📅 {logs[0].horizonte}</div>}
+              {logs[0].horizonte&&<div style={{ color:"#555", fontSize:"10px", marginTop:"6px", fontFamily:"monospace" }}>📅 {logs[0].horizonte}</div>}
             </div>
           )}
 
@@ -287,7 +266,7 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
               style={{ width:"100%", background:"none", border:"none", color:"#444", fontSize:"10px", fontFamily:"monospace", letterSpacing:"0.1em", cursor:"pointer", display:"flex", justifyContent:"space-between", padding:0 }}>
               <span>MERCADO AO VIVO ⚡</span><span>{showPrices?"▲":"▼"}</span>
             </button>
-            {(showPrices||!isMobile) && (
+            {(showPrices||!isMobile)&&(
               <div style={{ marginTop:"10px" }}>
                 {ativosCategoria.slice(0,8).map(a=>{
                   const p=allPrices[a];
@@ -312,9 +291,9 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
               <div>
                 <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                   <span style={{ color:corCategoria, fontSize:"10px", fontFamily:"monospace", background:`${corCategoria}22`, border:`1px solid ${corCategoria}44`, borderRadius:"4px", padding:"2px 6px" }}>{categoria}</span>
-                  <span style={{ color:"#444", fontSize:"9px", fontFamily:"monospace" }}>{asset} · {INTERVALS.find(i=>i.value===interval)?.label}</span>
+                  <span style={{ color:"#444", fontSize:"9px", fontFamily:"monospace" }}>{asset}·{INTERVALS.find(i=>i.value===interval)?.label}</span>
                 </div>
-                <div style={{ color:priceColor, fontSize: isMobile?"20px":"24px", fontWeight:"700", fontFamily:"monospace", marginTop:"4px" }}>{currentPrice?`R$ ${currentPrice.toFixed(2)}`:"..."}</div>
+                <div style={{ color:priceColor, fontSize:isMobile?"20px":"24px", fontWeight:"700", fontFamily:"monospace", marginTop:"4px" }}>{currentPrice?`R$ ${currentPrice.toFixed(2)}`:"..."}</div>
                 {lastUpdate&&<div style={{ color:"#333", fontSize:"10px", fontFamily:"monospace" }}>{lastUpdate}</div>}
               </div>
               <div style={{ textAlign:"right" }}>
@@ -322,10 +301,10 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
                 {loadingAI&&<div style={{ color:corCategoria, fontSize:"11px" }}>🤖 analisando...</div>}
               </div>
             </div>
-            <CandleChart candles={candles} width={isMobile?340:700} height={isMobile?140:200} />
+            <CandleChart candles={candles} width={isMobile?340:700} height={isMobile?140:200}/>
           </div>
 
-          <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"16px", maxHeight: isMobile?"280px":"350px", overflowY:"auto" }}>
+          <div style={{ background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"12px", padding:"16px", maxHeight:isMobile?"280px":"350px", overflowY:"auto" }}>
             <div style={{ color:"#444", fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"12px" }}>LOG {logs.length>0&&`(${logs.length})`}</div>
             {logs.length===0?(
               <div style={{ color:"#2a2a2a", fontSize:"13px", textAlign:"center", padding:"30px 0" }}>{running?"Aguardando...":"Inicie a IA"}</div>
@@ -333,7 +312,7 @@ Responda: {"signal":"COMPRA|VENDA|AGUARDAR","confidence":0-100,"bestInterval":"1
               <div key={l.id} style={{ borderLeft:`3px solid ${l.signal==="COMPRA"?"#00e5a0":l.signal==="VENDA"?"#ff4d6d":"#ffd60a"}`, paddingLeft:"10px", marginBottom:"12px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"6px", marginBottom:"4px", flexWrap:"wrap" }}>
                   <span style={{ color:"#555", fontSize:"10px", fontFamily:"monospace" }}>{l.time}</span>
-                  <Badge type={l.signal} />
+                  <Badge type={l.signal}/>
                   <span style={{ color:"#fff", fontWeight:"700", fontSize:"12px" }}>{l.asset}</span>
                 </div>
                 <p style={{ color:"#ccc", fontSize:"11px", lineHeight:"1.6", margin:0 }}>{l.reasoning}</p>
@@ -354,11 +333,14 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [proxyOk, setProxyOk] = useState(null);
   const [proxyWaking, setProxyWaking] = useState(false);
+  const [showNotifConfig, setShowNotifConfig] = useState(false);
   const isMobile = useIsMobile();
+  const { permissao, ativar } = useNotificacoes();
 
   useEffect(() => {
     if (!autenticado) return;
     keepProxyAwake();
+    registrarSW();
     const check = () => {
       fetch(`${PROXY}/health`).then(r=>r.json()).then(()=>{setProxyOk(true);setProxyWaking(false);}).catch(()=>{setProxyOk(false);setProxyWaking(true);});
     };
@@ -368,28 +350,39 @@ export default function App() {
   }, [autenticado]);
 
   const handleLogout = () => { sessionStorage.removeItem("tradeai_auth"); setAutenticado(false); };
-  if (!autenticado) return <Login onLogin={()=>setAutenticado(true)} />;
+  if (!autenticado) return <Login onLogin={()=>setAutenticado(true)}/>;
 
   const PAGES = [
-    { id:"dashboard",    label: isMobile?"📈":"📈 Dashboard" },
-    { id:"chat",         label: isMobile?"💬":"💬 Chat IA" },
-    { id:"score",        label: isMobile?"⭐":"⭐ Score" },
-    { id:"alertas",      label: isMobile?"🔔":"🔔 Alertas" },
-    { id:"backtesting",  label: isMobile?"📊":"📊 Backtest" },
-    { id:"papertrading", label: isMobile?"🏦":"🏦 Paper" },
+    { id:"dashboard",    label:isMobile?"📈":"📈 Dashboard" },
+    { id:"chat",         label:isMobile?"💬":"💬 Chat IA" },
+    { id:"score",        label:isMobile?"⭐":"⭐ Score" },
+    { id:"alertas",      label:isMobile?"🔔":"🔔 Alertas" },
+    { id:"backtesting",  label:isMobile?"📊":"📊 Backtest" },
+    { id:"papertrading", label:isMobile?"🏦":"🏦 Paper" },
   ];
+
+  const notifColor = permissao==="granted"?"#00e5a0":permissao==="denied"?"#ff4d6d":"#ffd60a";
 
   return (
     <div style={{ minHeight:"100vh", background:"#080c14", fontFamily:"'DM Sans','Segoe UI',sans-serif", color:"#e0e6f0" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
-        * { box-sizing:border-box; margin:0; padding:0; }
-        ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+        *{box-sizing:border-box;margin:0;padding:0}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
         select,input,textarea{outline:none}
-        .pulse{animation:pulse 2s infinite} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        .pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
       `}</style>
 
-      <div style={{ background:"#0a0f1a", borderBottom:"1px solid #1e2d45", padding: isMobile?"10px 10px":"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 }}>
+      {/* Modal de configuração de notificações */}
+      {showNotifConfig && (
+        <div style={{ position:"fixed", inset:0, background:"#000000aa", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px" }}
+          onClick={e=>e.target===e.currentTarget&&setShowNotifConfig(false)}>
+          <ConfigNotificacoes onClose={()=>setShowNotifConfig(false)}/>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ background:"#0a0f1a", borderBottom:"1px solid #1e2d45", padding:isMobile?"10px 10px":"12px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
           <div style={{ width:"28px", height:"28px", background:"linear-gradient(135deg,#00e5a0,#006eff)", borderRadius:"7px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"14px" }}>⚡</div>
           {!isMobile&&<div style={{ fontWeight:"700", fontSize:"14px" }}>TRADE<span style={{ color:"#00e5a0" }}>AI</span></div>}
@@ -398,20 +391,26 @@ export default function App() {
         <div style={{ display:"flex", gap:"2px", background:"#0d1320", border:"1px solid #1e2d45", borderRadius:"10px", padding:"3px", overflowX:"auto" }}>
           {PAGES.map(nav=>(
             <button key={nav.id} onClick={()=>setPage(nav.id)}
-              style={{ background: page===nav.id?"#00e5a015":"transparent", border: page===nav.id?"1px solid #00e5a033":"1px solid transparent", color: page===nav.id?"#00e5a0":"#555", borderRadius:"7px", padding: isMobile?"7px 8px":"7px 12px", fontSize: isMobile?"14px":"12px", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
+              style={{ background:page===nav.id?"#00e5a015":"transparent", border:page===nav.id?"1px solid #00e5a033":"1px solid transparent", color:page===nav.id?"#00e5a0":"#555", borderRadius:"7px", padding:isMobile?"7px 8px":"7px 12px", fontSize:isMobile?"14px":"12px", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}>
               {nav.label}
             </button>
           ))}
         </div>
 
-        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+          {/* Botão de notificações */}
+          <button onClick={()=>setShowNotifConfig(true)} title="Configurar notificações"
+            style={{ background:`${notifColor}15`, border:`1px solid ${notifColor}33`, color:notifColor, borderRadius:"6px", padding:"5px 8px", fontSize:"14px", cursor:"pointer" }}>
+            {permissao==="granted"?"🔔":"🔕"}
+          </button>
+
           <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
-            <div style={{ width:"7px", height:"7px", borderRadius:"50%", background: proxyOk===null?"#555":proxyOk?"#00e5a0":"#ffd60a" }} className={proxyWaking?"pulse":""} />
+            <div style={{ width:"7px", height:"7px", borderRadius:"50%", background:proxyOk===null?"#555":proxyOk?"#00e5a0":"#ffd60a" }} className={proxyWaking?"pulse":""}/>
             {!isMobile&&<span style={{ color:proxyOk?"#00e5a0":"#ffd60a", fontSize:"10px", fontFamily:"monospace" }}>{proxyOk?"ONLINE":"ACORDANDO..."}</span>}
           </div>
           <button onClick={handleLogout}
-            style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d33", color:"#ff4d6d", borderRadius:"6px", padding:"5px 10px", fontSize:"11px", cursor:"pointer" }}>
-            🔒{!isMobile&&" Sair"}
+            style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d33", color:"#ff4d6d", borderRadius:"6px", padding:"5px 8px", fontSize:"11px", cursor:"pointer" }}>
+            🔒
           </button>
         </div>
       </div>
@@ -423,12 +422,23 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ display:page==="dashboard"   ?"block":"none" }}><Dashboard /></div>
-      <div style={{ display:page==="chat"        ?"block":"none" }}><Chat /></div>
-      <div style={{ display:page==="score"       ?"block":"none" }}><Score /></div>
-      <div style={{ display:page==="alertas"     ?"block":"none" }}><Alertas /></div>
-      <div style={{ display:page==="backtesting" ?"block":"none" }}><Backtesting /></div>
-      <div style={{ display:page==="papertrading"?"block":"none" }}><PaperTrading /></div>
+      {/* Banner para ativar notificações */}
+      {permissao==="default"&&autenticado&&(
+        <div style={{ background:"#6af11", border:"1px solid #6af33", margin:"10px 14px", borderRadius:"10px", padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:"10px" }}>
+          <span style={{ color:"#6af", fontSize:"12px" }}>📱 Ative as notificações push para receber alertas no celular!</span>
+          <button onClick={()=>setShowNotifConfig(true)}
+            style={{ background:"#6af22", border:"1px solid #6af55", color:"#6af", borderRadius:"6px", padding:"5px 12px", fontSize:"11px", fontWeight:"700", cursor:"pointer", whiteSpace:"nowrap" }}>
+            Ativar
+          </button>
+        </div>
+      )}
+
+      <div style={{ display:page==="dashboard"   ?"block":"none" }}><Dashboard/></div>
+      <div style={{ display:page==="chat"        ?"block":"none" }}><Chat/></div>
+      <div style={{ display:page==="score"       ?"block":"none" }}><Score/></div>
+      <div style={{ display:page==="alertas"     ?"block":"none" }}><Alertas/></div>
+      <div style={{ display:page==="backtesting" ?"block":"none" }}><Backtesting/></div>
+      <div style={{ display:page==="papertrading"?"block":"none" }}><PaperTrading/></div>
     </div>
   );
 }
