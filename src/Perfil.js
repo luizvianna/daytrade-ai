@@ -240,7 +240,29 @@ function AlocacaoBar({ categoria, percentual, cor }) {
   );
 }
 
-export default function Perfil({ onPerfilSalvo }) {
+// Botão de opção sem manipulação direta do DOM (evita conflito com React)
+function OpcaoButton({ texto, letra, onClick }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: hover ? "#00e5a011" : "#0d1320",
+        border: `1px solid ${hover ? "#00e5a0" : "#1e2d45"}`,
+        color: hover ? "#fff" : "#ccc",
+        borderRadius: "12px", padding: "16px 18px", fontSize: "14px",
+        textAlign: "left", cursor: "pointer", lineHeight: "1.5",
+        transition: "background 0.15s, border-color 0.15s, color 0.15s",
+        width: "100%",
+      }}>
+      <span style={{ color: "#00e5a0", fontFamily: "monospace", marginRight: "10px" }}>{letra}.</span>
+      {texto}
+    </button>
+  );
+}
+
+export default function Perfil() {
   const [etapa, setEtapa] = useState("intro"); // intro | questionario | resultado
   const [respostas, setRespostas] = useState({});
   const [perguntaAtual, setPerguntaAtual] = useState(0);
@@ -249,6 +271,7 @@ export default function Perfil({ onPerfilSalvo }) {
   const [orcamentoMensal, setOrcamentoMensal] = useState("");
   const [nome, setNome] = useState("");
   const [analisando, setAnalisando] = useState(false);
+  const [verPerfilSalvo, setVerPerfilSalvo] = useState(true);
 
   const perfilSalvo = carregarPerfil();
 
@@ -262,13 +285,13 @@ export default function Perfil({ onPerfilSalvo }) {
     }
   };
 
-  const calcularResultado = useCallback(async (resp) => {
+  const calcularResultado = useCallback((resp) => {
     setAnalisando(true);
     const pontuacao = Object.values(resp).reduce((s, v) => s + v, 0);
     const tipoPerfil = getPerfil(pontuacao);
     const perfilInfo = PERFIS[tipoPerfil];
 
-    const resultado = {
+    const novoResultado = {
       nome: nome || "Investidor",
       tipoPerfil,
       pontuacao,
@@ -284,14 +307,15 @@ export default function Perfil({ onPerfilSalvo }) {
       })),
     };
 
-    setResultado(resultado);
+    setResultado(novoResultado);
     setEtapa("resultado");
     setAnalisando(false);
   }, [nome, capital, orcamentoMensal]);
 
   const salvar = () => {
     salvarPerfil(resultado);
-    if (onPerfilSalvo) onPerfilSalvo(resultado);
+    setVerPerfilSalvo(true);
+    setEtapa("intro");
   };
 
   const reiniciar = () => {
@@ -299,12 +323,13 @@ export default function Perfil({ onPerfilSalvo }) {
     setRespostas({});
     setPerguntaAtual(0);
     setResultado(null);
+    setVerPerfilSalvo(false);
   };
 
   const progresso = (perguntaAtual / PERGUNTAS.length) * 100;
 
   // Mostra perfil salvo
-  if (perfilSalvo && etapa === "intro") {
+  if (perfilSalvo && etapa === "intro" && verPerfilSalvo) {
     const info = PERFIS[perfilSalvo.tipoPerfil];
     return (
       <div style={{ padding: "14px", maxWidth: "700px", margin: "0 auto" }}>
@@ -454,13 +479,7 @@ export default function Perfil({ onPerfilSalvo }) {
         {/* Opções */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {pergunta.opcoes.map((opcao, i) => (
-            <button key={i} onClick={() => responder(opcao.pontos)}
-              style={{ background: "#0d1320", border: "1px solid #1e2d45", color: "#ccc", borderRadius: "12px", padding: "16px 18px", fontSize: "14px", textAlign: "left", cursor: "pointer", lineHeight: "1.5", transition: "all 0.2s" }}
-              onMouseEnter={e => { e.target.style.borderColor = "#00e5a0"; e.target.style.background = "#00e5a011"; e.target.style.color = "#fff"; }}
-              onMouseLeave={e => { e.target.style.borderColor = "#1e2d45"; e.target.style.background = "#0d1320"; e.target.style.color = "#ccc"; }}>
-              <span style={{ color: "#00e5a0", fontFamily: "monospace", marginRight: "10px" }}>{String.fromCharCode(65 + i)}.</span>
-              {opcao.texto}
-            </button>
+            <OpcaoButton key={i} texto={opcao.texto} letra={String.fromCharCode(65 + i)} onClick={() => responder(opcao.pontos)} />
           ))}
         </div>
 

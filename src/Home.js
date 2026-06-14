@@ -6,6 +6,18 @@ const STORAGE_KEY = "tradeai_conta";
 
 const ATIVOS_RESUMO = ["PETR4","VALE3","ITUB4","HGLG11","IVVB11","BTC-USD"];
 
+// Ticker usado como referência para o gráfico de rentabilidade (proxy do mercado)
+const TICKER_REFERENCIA = "BOVA11";
+
+const PERIODOS = [
+  { id: "1d",  label: "1D", range: "1d",  interval: "5m"  },
+  { id: "1s",  label: "1S", range: "5d",  interval: "30m" },
+  { id: "1m",  label: "1M", range: "1mo", interval: "1d"  },
+  { id: "6m",  label: "6M", range: "6mo", interval: "1d"  },
+  { id: "1a",  label: "1A", range: "1y",  interval: "1wk" },
+  { id: "tudo",label: "Tudo", range: "5y", interval: "1mo" },
+];
+
 function carregarConta() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -27,18 +39,69 @@ function fmtMoney(v) {
   return `R$ ${Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function MiniSparkline({ data, color = "#ffd60a", width = 120, height = 36 }) {
-  if (!data || data.length < 2) return null;
-  const pad = 2;
-  const w = width - pad * 2, h = height - pad * 2;
-  const minV = Math.min(...data), maxV = Math.max(...data);
-  const range = maxV - minV || 1;
-  const px = i => pad + (i / (data.length - 1)) * w;
-  const py = v => pad + h - ((v - minV) / range) * h;
-  const points = data.map((v, i) => `${px(i)},${py(v)}`).join(" ");
+// ── Gráfico de rentabilidade (linha ou candle) ────────────────────
+function RentabilidadeChart({ candles, tipo, width = 600, height = 200 }) {
+  if (!candles || candles.length < 2) {
+    return <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontSize: "13px" }}>Carregando dados...</div>;
+  }
+
+  const pad = { l: 8, r: 8, t: 14, b: 22 };
+  const w = width - pad.l - pad.r;
+  const h = height - pad.t - pad.b;
+
+  const closes = candles.map(c => c.close);
+  const prices = candles.flatMap(c => [c.high, c.low]);
+  const minP = Math.min(...prices), maxP = Math.max(...prices);
+  const range = (maxP - minP) || 1;
+
+  const first = closes[0];
+  const last = closes[closes.length - 1];
+  const positivo = last >= first;
+  const corPrincipal = positivo ? "#00e5a0" : "#ff4d6d";
+
+  const px = i => pad.l + (i / (candles.length - 1)) * w;
+  const py = v => pad.t + h - ((v - minP) / range) * h;
+
+  if (tipo === "linha") {
+    const points = closes.map((v, i) => `${px(i)},${py(v)}`).join(" ");
+    // Área preenchida sob a linha
+    const areaPoints = `${px(0)},${py(minP)} ${points} ${px(closes.length - 1)},${py(minP)}`;
+    return (
+      <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={corPrincipal} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={corPrincipal} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon points={areaPoints} fill="url(#areaGrad)" />
+        <polyline points={points} fill="none" stroke={corPrincipal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Linha de referência (preço inicial) */}
+        <line x1={pad.l} y1={py(first)} x2={width - pad.r} y2={py(first)} stroke="#ffffff22" strokeDasharray="4,4" />
+      </svg>
+    );
+  }
+
+  // Candle
+  const cw = w / candles.length;
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+      <line x1={pad.l} y1={py(first)} x2={width - pad.r} y2={py(first)} stroke="#ffffff22" strokeDasharray="4,4" />
+      {candles.map((c, i) => {
+        const x = pad.l + i * cw + cw * 0.1;
+        const bw = Math.max(1, cw * 0.8);
+        const isUp = c.close >= c.open;
+        const color = isUp ? "#00e5a0" : "#ff4d6d";
+        const bodyTop = py(Math.max(c.open, c.close));
+        const bodyH = Math.max(1, py(Math.min(c.open, c.close)) - bodyTop);
+        const cx = x + bw / 2;
+        return (
+          <g key={i}>
+            <line x1={cx} y1={py(c.high)} x2={cx} y2={py(c.low)} stroke={color} strokeWidth="1" />
+            <rect x={x} y={bodyTop} width={bw} height={bodyH} fill={color} rx="1" />
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -109,13 +172,19 @@ function EditarContaModal({ conta, onSave, onClose }) {
   );
 }
 
-export default function Home({ setPage, onAbrirNotif }) {
+export default function Home({ setPage }) {
   const [conta, setConta] = useState(carregarConta);
-  const [perfil, setPerfil] = useState(carregarPerfil());
+  const [perfil] = useState(carregarPerfil());
   const [showEditModal, setShowEditModal] = useState(false);
   const [valoresOcultos, setValoresOcultos] = useState(false);
   const [precos, setPrecos] = useState({});
-  const [historico, setHistorico] = useState([]);
+
+  // Gráfico de rentabilidade
+  const [periodo, setPeriodo] = useState("1m");
+  const [tipoGrafico, setTipoGrafico] = useState("linha"); // linha | candle
+  const [candles, setCandles] = useState([]);
+  const [loadingChart, setLoadingChart] = useState(false);
+  const [rentabilidade, setRentabilidade] = useState(null);
 
   const fetchPrecos = useCallback(async () => {
     try {
@@ -124,15 +193,38 @@ export default function Home({ setPage, onAbrirNotif }) {
     } catch {}
   }, []);
 
+  const fetchCandlesRentabilidade = useCallback(async (periodoId) => {
+    setLoadingChart(true);
+    try {
+      const conf = PERIODOS.find(p => p.id === periodoId);
+      const res = await fetch(`${PROXY}/api/candles?ticker=${TICKER_REFERENCIA}&interval=${conf.interval}&range=${conf.range}`);
+      const data = await res.json();
+      if (data.error || !data.candles?.length) throw new Error(data.error || "sem dados");
+
+      setCandles(data.candles);
+
+      const first = data.candles[0].close;
+      const last = data.candles[data.candles.length - 1].close;
+      const pct = ((last - first) / first) * 100;
+      setRentabilidade(pct);
+    } catch (e) {
+      console.error(e);
+      setCandles([]);
+      setRentabilidade(null);
+    } finally {
+      setLoadingChart(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPrecos();
-    // Simula histórico de patrimônio para o sparkline
-    const base = conta.valorInvestido || 10000;
-    const hist = Array.from({ length: 12 }, (_, i) => base * (0.94 + Math.random() * 0.1 + i * 0.005));
-    setHistorico(hist);
     const i = setInterval(fetchPrecos, 60000);
     return () => clearInterval(i);
   }, [fetchPrecos]);
+
+  useEffect(() => {
+    fetchCandlesRentabilidade(periodo);
+  }, [periodo, fetchCandlesRentabilidade]);
 
   const salvarContaInfo = (novaConta) => {
     setConta(novaConta);
@@ -140,7 +232,6 @@ export default function Home({ setPage, onAbrirNotif }) {
   };
 
   const patrimonioTotal = (conta.saldoConta || 0) + (conta.valorInvestido || 0);
-  const variacaoAno = 0.11; // placeholder até integração real
 
   const perfilInfo = perfil ? {
     conservador: { nome: "Conservador", icone: "🛡️", cor: "#6af" },
@@ -150,6 +241,7 @@ export default function Home({ setPage, onAbrirNotif }) {
   }[perfil.tipoPerfil] : null;
 
   const oculto = (val) => valoresOcultos ? "••••••" : val;
+  const rentColor = rentabilidade === null ? "#888" : rentabilidade >= 0 ? "#00e5a0" : "#ff4d6d";
 
   return (
     <div style={{ padding: "14px", maxWidth: "700px", margin: "0 auto" }}>
@@ -168,33 +260,64 @@ export default function Home({ setPage, onAbrirNotif }) {
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button onClick={() => setValoresOcultos(v => !v)}
-            style={{ background: "#0d1320", border: "1px solid #1e2d45", color: "#666", borderRadius: "10px", width: "38px", height: "38px", fontSize: "16px", cursor: "pointer" }}>
-            {valoresOcultos ? "🙈" : "👁️"}
-          </button>
-        </div>
+        <button onClick={() => setValoresOcultos(v => !v)}
+          style={{ background: "#0d1320", border: "1px solid #1e2d45", color: "#666", borderRadius: "10px", width: "38px", height: "38px", fontSize: "16px", cursor: "pointer" }}>
+          {valoresOcultos ? "🙈" : "👁️"}
+        </button>
       </div>
 
-      {/* Card Investimentos (patrimônio) */}
-      <div style={{ background: "linear-gradient(135deg,#0d1320,#0a0f1a)", border: "1px solid #1e2d45", borderRadius: "18px", padding: "22px", marginBottom: "14px", position: "relative", overflow: "hidden" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "20px" }}>📊</span>
-            <span style={{ color: "#ccc", fontWeight: "700", fontSize: "15px" }}>Investimentos</span>
-          </div>
-          <MiniSparkline data={historico} color={variacaoAno >= 0 ? "#00e5a0" : "#ff4d6d"} />
+      {/* Card Investimentos (patrimônio + gráfico) */}
+      <div style={{ background: "linear-gradient(135deg,#0d1320,#0a0f1a)", border: "1px solid #1e2d45", borderRadius: "18px", padding: "22px", marginBottom: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+          <span style={{ fontSize: "20px" }}>📊</span>
+          <span style={{ color: "#ccc", fontWeight: "700", fontSize: "15px" }}>Investimentos</span>
         </div>
 
         <div style={{ color: "#444", fontSize: "11px", marginBottom: "4px" }}>Patrimônio total</div>
         <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "16px", flexWrap: "wrap" }}>
           <span style={{ color: "#fff", fontSize: "28px", fontWeight: "700", fontFamily: "monospace" }}>{oculto(fmtMoney(patrimonioTotal))}</span>
-          <span style={{ color: variacaoAno >= 0 ? "#00e5a0" : "#ff4d6d", fontSize: "13px", fontFamily: "monospace" }}>
-            {variacaoAno >= 0 ? "+" : ""}{variacaoAno.toFixed(2)}% no ano
-          </span>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "16px", borderTop: "1px solid #1e2d45" }}>
+        {/* Controles do gráfico */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+          {/* Períodos */}
+          <div style={{ display: "flex", gap: "4px", background: "#111a27", borderRadius: "8px", padding: "3px", flexWrap: "wrap" }}>
+            {PERIODOS.map(p => (
+              <button key={p.id} onClick={() => setPeriodo(p.id)}
+                style={{ background: periodo === p.id ? "#00e5a022" : "transparent", border: periodo === p.id ? "1px solid #00e5a044" : "1px solid transparent", color: periodo === p.id ? "#00e5a0" : "#666", borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Toggle linha/candle */}
+          <div style={{ display: "flex", gap: "4px", background: "#111a27", borderRadius: "8px", padding: "3px" }}>
+            <button onClick={() => setTipoGrafico("linha")}
+              style={{ background: tipoGrafico === "linha" ? "#6af22" : "transparent", border: tipoGrafico === "linha" ? "1px solid #6af44" : "1px solid transparent", color: tipoGrafico === "linha" ? "#6af" : "#666", borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+              📈 Linha
+            </button>
+            <button onClick={() => setTipoGrafico("candle")}
+              style={{ background: tipoGrafico === "candle" ? "#6af22" : "transparent", border: tipoGrafico === "candle" ? "1px solid #6af44" : "1px solid transparent", color: tipoGrafico === "candle" ? "#6af" : "#666", borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+              🕯️ Candle
+            </button>
+          </div>
+        </div>
+
+        {/* Rentabilidade do período */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+          <span style={{ color: "#444", fontSize: "10px", fontFamily: "monospace" }}>IBOV ({TICKER_REFERENCIA}) · {PERIODOS.find(p => p.id === periodo)?.label}</span>
+          {rentabilidade !== null && (
+            <span style={{ color: rentColor, fontSize: "13px", fontWeight: "700", fontFamily: "monospace" }}>
+              {rentabilidade >= 0 ? "+" : ""}{rentabilidade.toFixed(2)}%
+            </span>
+          )}
+          {loadingChart && <span style={{ color: "#555", fontSize: "11px" }}>🔄</span>}
+        </div>
+
+        {/* Gráfico */}
+        <RentabilidadeChart candles={candles} tipo={tipoGrafico} width={640} height={180} />
+
+        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "16px", borderTop: "1px solid #1e2d45", marginTop: "12px" }}>
           <div>
             <div style={{ color: "#444", fontSize: "10px", marginBottom: "4px" }}>Total investido</div>
             <div style={{ color: "#00e5a0", fontSize: "15px", fontWeight: "700", fontFamily: "monospace" }}>{oculto(fmtMoney(conta.valorInvestido))}</div>
@@ -220,11 +343,9 @@ export default function Home({ setPage, onAbrirNotif }) {
             ✏️ Editar
           </button>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ color: "#444", fontSize: "10px", marginBottom: "4px" }}>Saldo disponível</div>
-            <div style={{ color: "#fff", fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{oculto(fmtMoney(conta.saldoConta))}</div>
-          </div>
+        <div>
+          <div style={{ color: "#444", fontSize: "10px", marginBottom: "4px" }}>Saldo disponível</div>
+          <div style={{ color: "#fff", fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{oculto(fmtMoney(conta.saldoConta))}</div>
         </div>
         {!conta.conectado && (
           <div style={{ marginTop: "14px", background: "#6af11", border: "1px solid #6af33", borderRadius: "8px", padding: "8px 12px" }}>
@@ -314,7 +435,7 @@ export default function Home({ setPage, onAbrirNotif }) {
 
       <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px" }}>
         <span style={{ color: "#444", fontSize: "11px" }}>
-          ☰ Use o menu lateral para acessar todas as ferramentas · Toque em "Editar" para atualizar seus saldos
+          ☰ Use o menu lateral para acessar todas as ferramentas · Gráfico baseado no IBOVESPA (BOVA11)
         </span>
       </div>
     </div>
