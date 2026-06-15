@@ -110,17 +110,7 @@ export default function App() {
   const notifColor = permissao === "granted" ? "#00e5a0" : permissao === "denied" ? "#ff4d6d" : "#ffd60a";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080c14", fontFamily: "'DM Sans','Segoe UI',sans-serif", color: "#e0e6f0" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-        select,input,textarea{outline:none}
-        .pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        button{transition:transform 0.08s ease}
-        button:active{transform:scale(0.97)}
-      `}</style>
-
+    <div className="tradeai-root" style={{ minHeight: "100vh", background: "#080c14", fontFamily: "'DM Sans','Segoe UI',sans-serif", color: "#e0e6f0" }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} page={page} setPage={setPage} onLogout={handleLogout} />
 
       {showNotifConfig && (
@@ -185,8 +175,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Apenas a página ativa é montada */}
-      <PageContent page={page} setPage={setPage} />
+      {/* Apenas a página ativa é montada. key={page} força remount limpo entre páginas, evitando o erro removeChild do React 19. */}
+      <PageContent key={page} page={page} setPage={setPage} />
     </div>
   );
 }
