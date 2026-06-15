@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { montarContextoUsuario, HORIZONTES } from "./ContextoIA";
+import SeletorHorizonte from "./SeletorHorizonte";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -11,6 +13,7 @@ const SUGESTOES = [
   "Analise IVVB11 para 2026",
   "Bitcoin está em boa hora para comprar?",
   "Quais ações se beneficiam com Selic alta?",
+  "Minha alocação está adequada para meu perfil?",
 ];
 
 function TypingIndicator() {
@@ -46,6 +49,13 @@ function Message({ msg }) {
         fontSize: "13px",
         lineHeight: "1.7",
       }}>
+        {msg.horizonte && (
+          <div style={{ marginBottom: "8px" }}>
+            <span style={{ background: `${msg.horizonte.cor}22`, color: msg.horizonte.cor, border: `1px solid ${msg.horizonte.cor}44`, borderRadius: "6px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace", fontWeight: "700" }}>
+              {msg.horizonte.icone} {msg.horizonte.label}
+            </span>
+          </div>
+        )}
         {msg.sources && msg.sources.length > 0 && (
           <div style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid #1e2d45" }}>
             <div style={{ color: "#6af", fontSize: "10px", fontFamily: "monospace", marginBottom: "4px" }}>🌐 FONTES PESQUISADAS</div>
@@ -103,13 +113,14 @@ export default function Chat() {
   const [messages, setMessages] = useState([
     {
       id: 1, role: "assistant",
-      content: "Olá! Sou sua IA de investimentos 🤖\n\nPosso te ajudar com:\n• Análise de ações, FIIs, ETFs e criptomoedas\n• Pesquisa de notícias e impacto econômico\n• Análise de longo prazo e recomendações\n• Discussão sobre juros, inflação e economia\n• Score de risco e probabilidade de ativos\n\nO que quer analisar hoje?",
+      content: "Olá! Sou sua IA de investimentos 🤖\n\nPosso te ajudar com:\n• Análise de ações, FIIs, ETFs e criptomoedas\n• Renda fixa, Tesouro Direto e alocação\n• Pesquisa de notícias e impacto econômico\n• Análise por horizonte: curto, médio ou longo prazo\n• Score de risco e probabilidade de ativos\n\nDica: escolha um horizonte abaixo antes de perguntar, para uma análise mais focada. O que quer analisar hoje?",
       time: new Date().toLocaleTimeString("pt-BR"),
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [webSearch, setWebSearch] = useState(true);
+  const [horizonte, setHorizonte] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -122,7 +133,9 @@ export default function Chat() {
     if (!userText || loading) return;
     setInput("");
 
-    const userMsg = { id: Date.now(), role: "user", content: userText, time: new Date().toLocaleTimeString("pt-BR") };
+    const horizonteInfo = horizonte ? HORIZONTES.find(h => h.id === horizonte) : null;
+
+    const userMsg = { id: Date.now(), role: "user", content: userText, time: new Date().toLocaleTimeString("pt-BR"), horizonte: horizonteInfo };
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
@@ -133,35 +146,34 @@ export default function Chat() {
         content: m.content,
       }));
 
-      const systemPrompt = `Você é uma IA especialista em investimentos brasileiros, cobrindo ações B3, FIIs, ETFs, renda fixa, tesouro direto e criptomoedas.
+      const contextoUsuario = montarContextoUsuario(horizonte);
+
+      const systemPrompt = `Você é uma IA especialista em investimentos brasileiros, cobrindo ações B3, FIIs, ETFs, renda fixa, tesouro direto e criptomoedas — sua missão é ser a IA de investimentos mais completa possível, cobrindo curto, médio e longo prazo.
+
+${contextoUsuario}
 
 SUAS RESPONSABILIDADES:
-1. Analisar ativos com visão de longo prazo (exceto quando pedido daytrade)
+1. Sempre que possível, conecte a resposta ao perfil e à alocação do investidor acima
 2. Pesquisar notícias recentes e impacto econômico
 3. Avaliar riscos: juros Selic, inflação IPCA, câmbio, geopolítica
 4. Dar score de 0-10 e recomendação clara quando analisar um ativo
 5. Explicar como mudanças macroeconômicas afetam os ativos
 6. Ser direto, prático e educativo
+7. Deixar claro quando há incerteza — você não prevê o mercado, ajuda a pensar em probabilidades e gestão de risco
 
-TIPOS DE ATIVOS:
+TIPOS DE ATIVOS QUE VOCÊ DOMINA:
 - Ações B3: PETR4, VALE3, ITUB4, etc.
 - FIIs: HGLG11, KNRI11, MXRF11, etc.
 - ETFs: IVVB11, BOVA11, HASH11, etc.
 - Cripto: BTC, ETH, BNB, etc.
-- Renda Fixa: Tesouro IPCA+, Selic, CDB, LCI, LCA
+- Renda Fixa: Tesouro Selic/IPCA+/Prefixado, CDB, LCI, LCA
 
 FORMATO DE RESPOSTA:
 - Use emojis para tornar mais visual
 - Organize em tópicos quando necessário
 - Sempre mencione riscos
 - Para análises de ativos, termine com um resumo estruturado em JSON:
-{"recomendacao":"COMPRAR|AGUARDAR|EVITAR","risco":"BAIXO|MÉDIO|ALTO","horizonte":"curto|médio|longo prazo","score":0-10}
-
-CONTEXTO ECONÔMICO ATUAL BRASIL:
-- Selic elevada impacta negativamente FIIs e growth stocks
-- Inflação afeta poder de compra e margens
-- Câmbio alto beneficia exportadoras
-- Sempre considere o momento do ciclo econômico`;
+{"recomendacao":"COMPRAR|AGUARDAR|EVITAR","risco":"BAIXO|MÉDIO|ALTO","horizonte":"curto|médio|longo prazo","score":0-10}`;
 
       const prompt = webSearch
         ? `${userText}\n\n[INSTRUÇÃO: Pesquise na web informações recentes sobre este tema antes de responder. Mencione as fontes que usou.]`
@@ -210,7 +222,7 @@ CONTEXTO ECONÔMICO ATUAL BRASIL:
       setLoading(false);
       inputRef.current?.focus();
     }
-  }, [input, loading, messages, webSearch]);
+  }, [input, loading, messages, webSearch, horizonte]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -225,10 +237,10 @@ CONTEXTO ECONÔMICO ATUAL BRASIL:
       `}</style>
 
       {/* Header do chat */}
-      <div style={{ padding: "14px 0", borderBottom: "1px solid #1e2d45", marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ padding: "14px 0", borderBottom: "1px solid #1e2d45", marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "2px" }}>💬 Chat com IA de Investimentos</h2>
-          <p style={{ color: "#444", fontSize: "11px" }}>Ações · FIIs · ETFs · Cripto · Economia · Longo Prazo</p>
+          <p style={{ color: "#444", fontSize: "11px" }}>Ações · FIIs · ETFs · Cripto · Renda Fixa · Curto, Médio e Longo Prazo</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ color: "#555", fontSize: "11px" }}>🌐 Web</span>
@@ -237,6 +249,12 @@ CONTEXTO ECONÔMICO ATUAL BRASIL:
             {webSearch ? "ON ✓" : "OFF"}
           </button>
         </div>
+      </div>
+
+      {/* Seletor de horizonte */}
+      <div style={{ marginBottom: "12px" }}>
+        <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "6px" }}>HORIZONTE DA ANÁLISE (opcional)</div>
+        <SeletorHorizonte value={horizonte} onChange={setHorizonte} compact />
       </div>
 
       {/* Sugestões rápidas */}
@@ -270,7 +288,7 @@ CONTEXTO ECONÔMICO ATUAL BRASIL:
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pergunte sobre ações, FIIs, ETFs, cripto, economia..."
+            placeholder="Pergunte sobre ações, FIIs, ETFs, cripto, renda fixa, economia..."
             rows={1}
             style={{
               flex: 1, background: "#0d1320", border: "1px solid #1e2d45",

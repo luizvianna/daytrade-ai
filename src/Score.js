@@ -1,4 +1,6 @@
 import { useState, useCallback } from "react";
+import { montarContextoUsuario, HORIZONTES } from "./ContextoIA";
+import SeletorHorizonte from "./SeletorHorizonte";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -134,6 +136,7 @@ export default function Score() {
   const [categoriaFiltro, setCategoriaFiltro] = useState("Todos");
   const [analisado, setAnalisado] = useState(false);
   const [erros, setErros] = useState([]);
+  const [horizonte, setHorizonte] = useState(null);
 
   const analisarAtivos = useCallback(async () => {
     setLoading(true);
@@ -145,6 +148,9 @@ export default function Score() {
     const todosAtivos = Object.entries(ATIVOS_PARA_SCORE).flatMap(([cat, ativos]) =>
       ativos.map(ticker => ({ ticker, categoria: cat }))
     );
+
+    const contextoUsuario = montarContextoUsuario(horizonte);
+    const horizonteInfo = horizonte ? HORIZONTES.find(h => h.id === horizonte) : null;
 
     const resultados = [];
     let processados = 0;
@@ -185,7 +191,9 @@ export default function Score() {
         } catch {}
 
         // IA gera o score
-        const prompt = `Analise o ativo ${ticker} (${categoria}) da B3 brasileira e gere um score de qualidade de investimento.
+        const prompt = `${contextoUsuario}
+
+Analise o ativo ${ticker} (${categoria}) da B3 brasileira e gere um score de qualidade de investimento${horizonteInfo ? ` com foco em ${horizonteInfo.label.toLowerCase()} (${horizonteInfo.sub})` : ""}.
 
 Dados disponíveis:
 - Preço atual: R$${preco.toFixed(2)}
@@ -200,13 +208,14 @@ ${categoria === "FIIs" ? "- Dividend Yield, qualidade dos imóveis, vacância, g
 ${categoria === "Ações" ? "- P/L estimado, ROE, crescimento, solidez financeira, setor" : ""}
 ${categoria === "ETFs" ? "- Diversificação, taxa de administração, liquidez, índice seguido" : ""}
 ${categoria === "Cripto" ? "- Adoção, tecnologia, liquidez, dominância de mercado, risco regulatório" : ""}
-- Contexto macroeconômico brasileiro (Selic alta, inflação, câmbio)
+- Contexto macroeconômico brasileiro (Selic, inflação, câmbio)
+${horizonteInfo ? `- IMPORTANTE: pondere o score considerando especificamente o horizonte de ${horizonteInfo.label.toLowerCase()} (${horizonteInfo.foco})` : "- Considere curto, médio e longo prazo de forma equilibrada"}
 
 Responda APENAS JSON:
 {
   "score": 0-10,
   "recomendacao": "COMPRAR|AGUARDAR|EVITAR",
-  "analise": "análise completa em 3 frases",
+  "analise": "análise completa em 3 frases, mencionando o horizonte considerado",
   "subScores": {
     "Técnico": 0-10,
     "Fundamentos": 0-10,
@@ -222,7 +231,7 @@ Responda APENAS JSON:
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            systemPrompt: "Analista de investimentos brasileiro especialista. Responda APENAS JSON válido.",
+            systemPrompt: "Analista de investimentos brasileiro especialista, cobrindo curto, médio e longo prazo. Responda APENAS JSON válido.",
             prompt,
           }),
         });
@@ -239,7 +248,7 @@ Responda APENAS JSON:
           subScores: parsed.subScores || {},
           pontosFortres: parsed.pontosFortres || [],
           pontosFragos: parsed.pontosFragos || [],
-          horizonte: parsed.horizonte || "médio prazo",
+          horizonte: parsed.horizonte || horizonteInfo?.label.toLowerCase() || "médio prazo",
           preco, variacao, tendencia, momentum,
           analisadoEm: new Date().toLocaleTimeString("pt-BR"),
         });
@@ -265,7 +274,7 @@ Responda APENAS JSON:
     setAnalisado(true);
     setLoading(false);
     setProgressoMsg("Análise concluída!");
-  }, []);
+  }, [horizonte]);
 
   const rankingFiltrado = categoriaFiltro === "Todos"
     ? ranking
@@ -286,7 +295,7 @@ Responda APENAS JSON:
       `}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+      <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
         <div>
           <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>⭐ <span style={{ color: "#ffd60a" }}>Score</span> Fundamentalista</h2>
           <p style={{ color: "#444", fontSize: "12px" }}>IA analisa e pontua todos os ativos de 0 a 10</p>
@@ -295,6 +304,17 @@ Responda APENAS JSON:
           style={{ background: loading ? "#555" : "linear-gradient(135deg,#ffd60a,#ff9f43)", color: "#000", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "14px", fontWeight: "700", cursor: loading ? "not-allowed" : "pointer" }}>
           {loading ? "⏳ Analisando..." : analisado ? "🔄 Reanalisar" : "▶ Analisar Todos"}
         </button>
+      </div>
+
+      {/* Seletor de horizonte */}
+      <div style={{ marginBottom: "16px" }}>
+        <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "6px" }}>HORIZONTE DA ANÁLISE (opcional)</div>
+        <SeletorHorizonte value={horizonte} onChange={setHorizonte} compact />
+        {horizonte && (
+          <div style={{ color: "#555", fontSize: "11px", marginTop: "6px" }}>
+            O score será ponderado considerando {HORIZONTES.find(h => h.id === horizonte)?.label.toLowerCase()}.
+          </div>
+        )}
       </div>
 
       {/* Progresso */}
