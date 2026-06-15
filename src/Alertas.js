@@ -295,10 +295,7 @@ export default function Alertas() {
 
   return (
     <div style={{ padding: "14px", maxWidth: "800px", margin: "0 auto" }}>
-      <style>{`
-        select, input { outline: none; }
-        .tab-btn:hover { color: #aaa !important; }
-      `}</style>
+
 
       {notificacao && <AlertaNotificacao alerta={notificacao} onDismiss={() => setNotificacao(null)} />}
 

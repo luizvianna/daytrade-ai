@@ -25,7 +25,7 @@ function TypingIndicator() {
           animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
         }} />
       ))}
-      <style>{`@keyframes bounce { 0%,100%{transform:translateY(0);opacity:0.4} 50%{transform:translateY(-5px);opacity:1} }`}</style>
+
     </div>
   );
 }
@@ -230,11 +230,7 @@ FORMATO DE RESPOSTA:
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 60px)", maxWidth: "900px", margin: "0 auto", padding: "0 12px" }}>
-      <style>{`
-        .chat-input:focus { border-color: #00e5a0 !important; box-shadow: 0 0 0 3px #00e5a022; }
-        .send-btn:hover { background: #00b07a !important; }
-        .sugestao:hover { border-color: #00e5a055 !important; background: #00e5a011 !important; color: #00e5a0 !important; }
-      `}</style>
+      {/* Estilos em public/index.html — não usar <style> aqui (causa removeChild no React 19) */}
 
       {/* Header do chat */}
       <div style={{ padding: "14px 0", borderBottom: "1px solid #1e2d45", marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>

@@ -289,10 +289,7 @@ Responda APENAS JSON:
 
   return (
     <div style={{ padding: "14px", maxWidth: "900px", margin: "0 auto" }}>
-      <style>{`
-        .prog { height:6px; background:#1e2d45; border-radius:3px; overflow:hidden; }
-        .prog-fill { height:100%; background:linear-gradient(90deg,#00e5a0,#006eff); border-radius:3px; transition:width 0.3s; }
-      `}</style>
+      {/* Estilos em public/index.html — não usar <style> aqui (causa removeChild no React 19) */}
 
       {/* Header */}
       <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>

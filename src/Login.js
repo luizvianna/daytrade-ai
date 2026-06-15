@@ -44,17 +44,7 @@ export default function Login({ onLogin }) {
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "'DM Sans','Segoe UI',sans-serif", padding: "20px"
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        .login-input:focus { border-color: #00e5a0 !important; box-shadow: 0 0 0 3px #00e5a022; }
-        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 24px #00e5a044; }
-        .btn-login:active { transform: translateY(0); }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        .card { animation: fadeIn 0.4s ease; }
-        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-        .shake { animation: shake 0.3s ease; }
-      `}</style>
+
 
       <div className="card" style={{ width: "100%", maxWidth: "400px" }}>
 

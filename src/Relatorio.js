@@ -272,11 +272,7 @@ Responda em JSON:
 
   return (
     <div style={{ padding: "14px", maxWidth: "900px", margin: "0 auto" }}>
-      <style>{`
-        .prog{height:5px;background:#1e2d45;border-radius:3px;overflow:hidden}
-        .prog-fill{height:100%;background:linear-gradient(90deg,#00e5a0,#006eff);border-radius:3px;transition:width 0.3s}
-        select,input{outline:none}
-      `}</style>
+
 
       {/* Header */}
       <div style={{ marginBottom: "16px" }}>
