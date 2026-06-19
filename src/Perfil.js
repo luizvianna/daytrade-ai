@@ -95,7 +95,7 @@ const PERGUNTAS = [
   },
 ];
 
-const PERFIS = {
+export const PERFIS = {
   conservador: {
     nome: "Conservador", icone: "🛡️", cor: "#6af",
     descricao: "Você prioriza segurança e preservação do capital. Prefere retornos menores mas previsíveis, sem sustos.",
