@@ -161,7 +161,7 @@ function EditarContaModal({ conta, onSave, onClose }) {
 }
 
 export default function Home({ setPage }) {
-  const [conta, setConta] = useState(null);
+  const [conta, setConta] = useState(CONTA_DEFAULT);
   const [perfil, setPerfil] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [valoresOcultos, setValoresOcultos] = useState(false);
@@ -228,7 +228,7 @@ export default function Home({ setPage }) {
     salvarContaBanco(novaConta);
   };
 
-  const patrimonioTotal = ((conta || CONTA_DEFAULT).saldoConta || 0) + ((conta || CONTA_DEFAULT).valorInvestido || 0);
+  const patrimonioTotal = (conta.saldoConta || 0) + (conta.valorInvestido || 0);
 
   const perfilInfo = perfil ? {
     conservador: { nome: "Conservador", icone: "🛡️", cor: "#6af" },
