@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { carregarPerfil } from "./Perfil";
 
 // Taxas de referência atualizadas (junho/2026) — via busca web
@@ -242,9 +242,13 @@ function SimuladorModal({ produto, onClose }) {
 }
 
 export default function Investimentos({ setPage }) {
-  const [perfil] = useState(carregarPerfil());
+  const [perfil, setPerfil] = useState(null);
   const [simulando, setSimulando] = useState(null);
   const [filtroCategoria, setFiltroCategoria] = useState("Todos");
+
+  useEffect(() => {
+    carregarPerfil().then(p => setPerfil(p));
+  }, []);
 
   const perfilInfo = perfil ? PERFIS_INFO[perfil.tipoPerfil] : null;
 

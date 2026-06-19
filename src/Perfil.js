@@ -1,13 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
-const STORAGE_KEY = "tradeai_perfil";
+const PROXY = "https://daytrade-proxy.onrender.com";
 
 const PERGUNTAS = [
   {
-    id: 1,
-    categoria: "Objetivo",
-    pergunta: "Qual é seu principal objetivo financeiro?",
-    icone: "🎯",
+    id: 1, categoria: "Objetivo", pergunta: "Qual é seu principal objetivo financeiro?", icone: "🎯",
     opcoes: [
       { texto: "Preservar meu capital e ter segurança", pontos: 1 },
       { texto: "Crescer meu patrimônio gradualmente", pontos: 2 },
@@ -16,10 +13,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 2,
-    categoria: "Prazo",
-    pergunta: "Por quanto tempo pretende manter seus investimentos?",
-    icone: "📅",
+    id: 2, categoria: "Prazo", pergunta: "Por quanto tempo pretende manter seus investimentos?", icone: "📅",
     opcoes: [
       { texto: "Menos de 1 ano (curto prazo)", pontos: 1 },
       { texto: "1 a 3 anos (médio prazo)", pontos: 2 },
@@ -28,10 +22,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 3,
-    categoria: "Risco",
-    pergunta: "Se sua carteira caísse 20% em um mês, o que faria?",
-    icone: "📉",
+    id: 3, categoria: "Risco", pergunta: "Se sua carteira caísse 20% em um mês, o que faria?", icone: "📉",
     opcoes: [
       { texto: "Venderia tudo imediatamente para evitar mais perdas", pontos: 1 },
       { texto: "Ficaria preocupado mas esperaria recuperar", pontos: 2 },
@@ -40,10 +31,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 4,
-    categoria: "Experiência",
-    pergunta: "Qual é sua experiência com investimentos?",
-    icone: "📚",
+    id: 4, categoria: "Experiência", pergunta: "Qual é sua experiência com investimentos?", icone: "📚",
     opcoes: [
       { texto: "Nenhuma — nunca investi antes", pontos: 1 },
       { texto: "Básica — só poupança ou CDB", pontos: 2 },
@@ -52,10 +40,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 5,
-    categoria: "Renda",
-    pergunta: "Qual é sua renda mensal aproximada?",
-    icone: "💰",
+    id: 5, categoria: "Renda", pergunta: "Qual é sua renda mensal aproximada?", icone: "💰",
     opcoes: [
       { texto: "Até R$ 3.000", pontos: 1 },
       { texto: "R$ 3.000 a R$ 8.000", pontos: 2 },
@@ -64,10 +49,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 6,
-    categoria: "Capital",
-    pergunta: "Qual valor pretende investir inicialmente?",
-    icone: "🏦",
+    id: 6, categoria: "Capital", pergunta: "Qual valor pretende investir inicialmente?", icone: "🏦",
     opcoes: [
       { texto: "Até R$ 1.000", pontos: 1 },
       { texto: "R$ 1.000 a R$ 10.000", pontos: 2 },
@@ -76,10 +58,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 7,
-    categoria: "Reserva",
-    pergunta: "Você tem reserva de emergência (6 meses de gastos)?",
-    icone: "🛡️",
+    id: 7, categoria: "Reserva", pergunta: "Você tem reserva de emergência (6 meses de gastos)?", icone: "🛡️",
     opcoes: [
       { texto: "Não tenho reserva de emergência", pontos: 1 },
       { texto: "Tenho parcialmente (1-3 meses)", pontos: 2 },
@@ -88,10 +67,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 8,
-    categoria: "Estabilidade",
-    pergunta: "Como está sua situação financeira atual?",
-    icone: "📊",
+    id: 8, categoria: "Estabilidade", pergunta: "Como está sua situação financeira atual?", icone: "📊",
     opcoes: [
       { texto: "Instável — tenho dívidas e pouca sobra", pontos: 1 },
       { texto: "Regular — consigo pagar as contas", pontos: 2 },
@@ -100,10 +76,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 9,
-    categoria: "Diversificação",
-    pergunta: "Como prefere diversificar seus investimentos?",
-    icone: "🎲",
+    id: 9, categoria: "Diversificação", pergunta: "Como prefere diversificar seus investimentos?", icone: "🎲",
     opcoes: [
       { texto: "Prefiro concentrar em renda fixa segura", pontos: 1 },
       { texto: "Misto: renda fixa + alguns fundos", pontos: 2 },
@@ -112,10 +85,7 @@ const PERGUNTAS = [
     ],
   },
   {
-    id: 10,
-    categoria: "Horizonte",
-    pergunta: "Qual é seu sonho financeiro?",
-    icone: "🌟",
+    id: 10, categoria: "Horizonte", pergunta: "Qual é seu sonho financeiro?", icone: "🌟",
     opcoes: [
       { texto: "Ter uma reserva segura para emergências", pontos: 1 },
       { texto: "Comprar um imóvel ou carro", pontos: 2 },
@@ -127,17 +97,9 @@ const PERGUNTAS = [
 
 const PERFIS = {
   conservador: {
-    nome: "Conservador",
-    icone: "🛡️",
-    cor: "#6af",
+    nome: "Conservador", icone: "🛡️", cor: "#6af",
     descricao: "Você prioriza segurança e preservação do capital. Prefere retornos menores mas previsíveis, sem sustos.",
-    alocacao: {
-      "Renda Fixa": 60,
-      "Tesouro Direto": 20,
-      "FIIs": 10,
-      "Ações": 5,
-      "Cripto": 5,
-    },
+    alocacao: { "Renda Fixa": 60, "Tesouro Direto": 20, "FIIs": 10, "Ações": 5, "Cripto": 5 },
     recomendacoes: [
       "Tesouro Selic para liquidez diária",
       "CDB de bancos sólidos (até R$250k coberto pelo FGC)",
@@ -147,17 +109,9 @@ const PERFIS = {
     ],
   },
   moderado: {
-    nome: "Moderado",
-    icone: "⚖️",
-    cor: "#ffd60a",
+    nome: "Moderado", icone: "⚖️", cor: "#ffd60a",
     descricao: "Você busca equilíbrio entre segurança e crescimento. Aceita alguma volatilidade por retornos melhores.",
-    alocacao: {
-      "Renda Fixa": 35,
-      "Tesouro Direto": 15,
-      "FIIs": 20,
-      "Ações": 25,
-      "Cripto": 5,
-    },
+    alocacao: { "Renda Fixa": 35, "Tesouro Direto": 15, "FIIs": 20, "Ações": 25, "Cripto": 5 },
     recomendacoes: [
       "50% em renda fixa de qualidade",
       "FIIs diversificados para renda mensal",
@@ -167,17 +121,9 @@ const PERFIS = {
     ],
   },
   arrojado: {
-    nome: "Arrojado",
-    icone: "🚀",
-    cor: "#00e5a0",
+    nome: "Arrojado", icone: "🚀", cor: "#00e5a0",
     descricao: "Você aceita riscos maiores buscando retornos acima da média. Tem visão de longo prazo e resiliência.",
-    alocacao: {
-      "Renda Fixa": 15,
-      "Tesouro Direto": 10,
-      "FIIs": 15,
-      "Ações": 45,
-      "Cripto": 15,
-    },
+    alocacao: { "Renda Fixa": 15, "Tesouro Direto": 10, "FIIs": 15, "Ações": 45, "Cripto": 15 },
     recomendacoes: [
       "Foco em ações de crescimento",
       "Small caps com potencial de valorização",
@@ -187,17 +133,9 @@ const PERFIS = {
     ],
   },
   agressivo: {
-    nome: "Agressivo",
-    icone: "⚡",
-    cor: "#ff9f43",
+    nome: "Agressivo", icone: "⚡", cor: "#ff9f43",
     descricao: "Você busca maximizar retornos e aceita alta volatilidade. Tem conhecimento avançado e controle emocional.",
-    alocacao: {
-      "Renda Fixa": 5,
-      "Tesouro Direto": 5,
-      "FIIs": 10,
-      "Ações": 50,
-      "Cripto": 30,
-    },
+    alocacao: { "Renda Fixa": 5, "Tesouro Direto": 5, "FIIs": 10, "Ações": 50, "Cripto": 30 },
     recomendacoes: [
       "Ações de alto crescimento e small caps",
       "Operações de swing trade e curto prazo",
@@ -215,15 +153,47 @@ function getPerfil(pontuacao) {
   return "agressivo";
 }
 
-export function carregarPerfil() {
+// ── API calls ao proxy (substitui localStorage) ──────────────
+export async function carregarPerfil() {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
+    const r = await fetch(`${PROXY}/api/perfil`);
+    const data = await r.json();
+    if (data.success && data.data) {
+      const p = data.data;
+      const perfilInfo = PERFIS[p.tipoPerfil];
+      return {
+        nome: p.nome,
+        tipoPerfil: p.tipoPerfil,
+        pontuacao: p.pontuacao,
+        capital: p.capital,
+        orcamentoMensal: p.orcamentoMensal,
+        perfilInfo,
+        criadoEm: new Date(p.atualizadoEm).toLocaleDateString("pt-BR"),
+        alocacaoSugerida: Object.entries(perfilInfo.alocacao).map(([cat, pct]) => ({
+          categoria: cat, percentual: pct,
+          valor: ((p.capital || 0) * pct / 100).toFixed(2),
+        })),
+      };
+    }
+    return null;
   } catch { return null; }
 }
 
-export function salvarPerfil(perfil) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(perfil));
+export async function salvarPerfil(perfil) {
+  try {
+    await fetch(`${PROXY}/api/perfil`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: perfil.nome,
+        tipoPerfil: perfil.tipoPerfil,
+        pontuacao: perfil.pontuacao,
+        capital: perfil.capital,
+        orcamentoMensal: perfil.orcamentoMensal,
+        respostas: perfil.respostas,
+      }),
+    });
+  } catch (e) { console.error("Erro ao salvar perfil:", e.message); }
 }
 
 function AlocacaoBar({ categoria, percentual, cor }) {
@@ -240,7 +210,6 @@ function AlocacaoBar({ categoria, percentual, cor }) {
   );
 }
 
-// Botão de opção sem manipulação direta do DOM (evita conflito com React)
 function OpcaoButton({ texto, letra, onClick }) {
   const [hover, setHover] = useState(false);
   return (
@@ -263,7 +232,7 @@ function OpcaoButton({ texto, letra, onClick }) {
 }
 
 export default function Perfil() {
-  const [etapa, setEtapa] = useState("intro"); // intro | questionario | resultado
+  const [etapa, setEtapa] = useState("loading");
   const [respostas, setRespostas] = useState({});
   const [perguntaAtual, setPerguntaAtual] = useState(0);
   const [resultado, setResultado] = useState(null);
@@ -271,9 +240,16 @@ export default function Perfil() {
   const [orcamentoMensal, setOrcamentoMensal] = useState("");
   const [nome, setNome] = useState("");
   const [analisando, setAnalisando] = useState(false);
-  const [verPerfilSalvo, setVerPerfilSalvo] = useState(true);
+  const [perfilSalvo, setPerfilSalvo] = useState(null);
+  const [salvando, setSalvando] = useState(false);
 
-  const perfilSalvo = carregarPerfil();
+  // Carrega perfil do banco ao montar
+  useEffect(() => {
+    carregarPerfil().then(p => {
+      setPerfilSalvo(p);
+      setEtapa(p ? "ver" : "intro");
+    });
+  }, []);
 
   const responder = (pontos) => {
     const novasRespostas = { ...respostas, [perguntaAtual]: pontos };
@@ -290,20 +266,18 @@ export default function Perfil() {
     const pontuacao = Object.values(resp).reduce((s, v) => s + v, 0);
     const tipoPerfil = getPerfil(pontuacao);
     const perfilInfo = PERFIS[tipoPerfil];
+    const capitalNum = parseFloat(capital) || 0;
 
     const novoResultado = {
       nome: nome || "Investidor",
-      tipoPerfil,
-      pontuacao,
-      perfilInfo,
-      capital: parseFloat(capital) || 0,
+      tipoPerfil, pontuacao, perfilInfo,
+      capital: capitalNum,
       orcamentoMensal: parseFloat(orcamentoMensal) || 0,
       respostas: resp,
       criadoEm: new Date().toLocaleDateString("pt-BR"),
       alocacaoSugerida: Object.entries(perfilInfo.alocacao).map(([cat, pct]) => ({
-        categoria: cat,
-        percentual: pct,
-        valor: ((parseFloat(capital) || 0) * pct / 100).toFixed(2),
+        categoria: cat, percentual: pct,
+        valor: (capitalNum * pct / 100).toFixed(2),
       })),
     };
 
@@ -312,10 +286,12 @@ export default function Perfil() {
     setAnalisando(false);
   }, [nome, capital, orcamentoMensal]);
 
-  const salvar = () => {
-    salvarPerfil(resultado);
-    setVerPerfilSalvo(true);
-    setEtapa("intro");
+  const salvar = async () => {
+    setSalvando(true);
+    await salvarPerfil(resultado);
+    setPerfilSalvo(resultado);
+    setSalvando(false);
+    setEtapa("ver");
   };
 
   const reiniciar = () => {
@@ -323,19 +299,27 @@ export default function Perfil() {
     setRespostas({});
     setPerguntaAtual(0);
     setResultado(null);
-    setVerPerfilSalvo(false);
   };
 
   const progresso = (perguntaAtual / PERGUNTAS.length) * 100;
 
-  // Mostra perfil salvo
-  if (perfilSalvo && etapa === "intro" && verPerfilSalvo) {
+  // Loading
+  if (etapa === "loading") {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "200px" }}>
+        <div style={{ color: "#00e5a0", fontSize: "14px" }}>⏳ Carregando perfil...</div>
+      </div>
+    );
+  }
+
+  // Ver perfil salvo
+  if (etapa === "ver" && perfilSalvo) {
     const info = PERFIS[perfilSalvo.tipoPerfil];
     return (
       <div style={{ padding: "14px", maxWidth: "700px", margin: "0 auto" }}>
         <div style={{ marginBottom: "16px" }}>
           <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>👤 <span style={{ color: info.cor }}>Meu Perfil</span> de Investidor</h2>
-          <p style={{ color: "#444", fontSize: "12px" }}>Criado em {perfilSalvo.criadoEm}</p>
+          <p style={{ color: "#444", fontSize: "12px" }}>Atualizado em {perfilSalvo.criadoEm}</p>
         </div>
 
         <div style={{ background: `${info.cor}11`, border: `2px solid ${info.cor}44`, borderRadius: "16px", padding: "24px", marginBottom: "16px", textAlign: "center" }}>
@@ -386,7 +370,7 @@ export default function Perfil() {
           <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>✅ RECOMENDAÇÕES PARA VOCÊ</div>
           {info.recomendacoes.map((r, i) => (
             <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < info.recomendacoes.length - 1 ? "1px solid #0d1827" : "none" }}>
-              <span style={{ color: info.cor, fontSize: "14px" }}>•</span>
+              <span style={{ color: info.cor }}>•</span>
               <span style={{ color: "#bbb", fontSize: "13px", lineHeight: "1.6" }}>{r}</span>
             </div>
           ))}
@@ -407,7 +391,7 @@ export default function Perfil() {
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div style={{ fontSize: "56px", marginBottom: "12px" }}>🧠</div>
           <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "8px" }}>Análise de Perfil de Investidor</h2>
-          <p style={{ color: "#666", fontSize: "13px", lineHeight: "1.7" }}>Responda 10 perguntas rápidas e a IA vai montar a estratégia de investimento ideal para você — do conservador ao agressivo.</p>
+          <p style={{ color: "#666", fontSize: "13px", lineHeight: "1.7" }}>Responda 10 perguntas rápidas e a IA vai montar a estratégia de investimento ideal para você.</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
@@ -459,7 +443,6 @@ export default function Perfil() {
     const pergunta = PERGUNTAS[perguntaAtual];
     return (
       <div style={{ padding: "14px", maxWidth: "600px", margin: "0 auto" }}>
-        {/* Progresso */}
         <div style={{ marginBottom: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ color: "#444", fontSize: "12px" }}>{pergunta.categoria}</span>
@@ -470,13 +453,11 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* Pergunta */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div style={{ fontSize: "44px", marginBottom: "12px" }}>{pergunta.icone}</div>
           <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#fff", lineHeight: "1.4" }}>{pergunta.pergunta}</h3>
         </div>
 
-        {/* Opções */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {pergunta.opcoes.map((opcao, i) => (
             <OpcaoButton key={i} texto={opcao.texto} letra={String.fromCharCode(65 + i)} onClick={() => responder(opcao.pontos)} />
@@ -489,10 +470,7 @@ export default function Perfil() {
             ← Voltar
           </button>
         )}
-
-        {analisando && (
-          <div style={{ textAlign: "center", padding: "20px", color: "#00e5a0" }}>⏳ Calculando seu perfil...</div>
-        )}
+        {analisando && <div style={{ textAlign: "center", padding: "20px", color: "#00e5a0" }}>⏳ Calculando seu perfil...</div>}
       </div>
     );
   }
@@ -549,9 +527,9 @@ export default function Perfil() {
             style={{ background: "#111a27", border: "1px solid #1e2d45", color: "#888", borderRadius: "10px", padding: "13px", fontSize: "13px", cursor: "pointer" }}>
             🔄 Refazer
           </button>
-          <button onClick={salvar}
-            style={{ background: `linear-gradient(135deg,${info.cor},#006eff)`, color: "#000", border: "none", borderRadius: "10px", padding: "13px", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>
-            💾 Salvar Perfil
+          <button onClick={salvar} disabled={salvando}
+            style={{ background: salvando ? "#555" : `linear-gradient(135deg,${info.cor},#006eff)`, color: "#000", border: "none", borderRadius: "10px", padding: "13px", fontSize: "14px", fontWeight: "700", cursor: salvando ? "not-allowed" : "pointer" }}>
+            {salvando ? "⏳ Salvando..." : "💾 Salvar Perfil"}
           </button>
         </div>
       </div>

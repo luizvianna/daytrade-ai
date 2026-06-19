@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { carregarPerfil } from "./Perfil";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
-const STORAGE_KEY = "tradeai_conta";
+// STORAGE_KEY mantido para compatibilidade temporária durante migração
 
 const ATIVOS_RESUMO = ["PETR4","VALE3","ITUB4","HGLG11","IVVB11","BTC-USD"];
 
@@ -18,28 +18,23 @@ const PERIODOS = [
   { id: "tudo",label: "Tudo", range: "5y", interval: "1mo" },
 ];
 
-function carregarConta() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {
-      saldoConta: 0,
-      valorInvestido: 0,
-      lancamentosFuturos: 0,
-      conectado: false,
-      corretora: "",
-    };
-  } catch { return { saldoConta: 0, valorInvestido: 0, lancamentosFuturos: 0, conectado: false, corretora: "" }; }
-}
+const CONTA_DEFAULT = { saldoConta: 0, valorInvestido: 0, lancamentosFuturos: 0, conectado: false, corretora: "" };
 
-function salvarConta(conta) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(conta));
+async function salvarContaBanco(conta) {
+  try {
+    await fetch(`${PROXY}/api/conta`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(conta),
+    });
+  } catch (e) { console.error("Erro ao salvar conta:", e.message); }
 }
 
 function fmtMoney(v) {
   return `R$ ${Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// ── Gráfico de rentabilidade (linha ou candle) ────────────────────
+// ── Gráfico de rentabilidade (linha ou candle) — sem <defs> para evitar bug removeChild ──
 function RentabilidadeChart({ candles, tipo, width = 600, height = 200 }) {
   if (!candles || candles.length < 2) {
     return <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontSize: "13px" }}>Carregando dados...</div>;
@@ -64,19 +59,12 @@ function RentabilidadeChart({ candles, tipo, width = 600, height = 200 }) {
 
   if (tipo === "linha") {
     const points = closes.map((v, i) => `${px(i)},${py(v)}`).join(" ");
-    // Área preenchida sob a linha
     const areaPoints = `${px(0)},${py(minP)} ${points} ${px(closes.length - 1)},${py(minP)}`;
     return (
       <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
-        <defs>
-          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={corPrincipal} stopOpacity="0.25" />
-            <stop offset="100%" stopColor={corPrincipal} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <polygon points={areaPoints} fill="url(#areaGrad)" />
+        {/* Área sob a linha — fill sólido semi-transparente, sem <defs> */}
+        <polygon points={areaPoints} fill={corPrincipal} opacity="0.12" />
         <polyline points={points} fill="none" stroke={corPrincipal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Linha de referência (preço inicial) */}
         <line x1={pad.l} y1={py(first)} x2={width - pad.r} y2={py(first)} stroke="#ffffff22" strokeDasharray="4,4" />
       </svg>
     );
@@ -173,11 +161,20 @@ function EditarContaModal({ conta, onSave, onClose }) {
 }
 
 export default function Home({ setPage }) {
-  const [conta, setConta] = useState(carregarConta);
-  const [perfil] = useState(carregarPerfil());
+  const [conta, setConta] = useState(null);
+  const [perfil, setPerfil] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [valoresOcultos, setValoresOcultos] = useState(false);
   const [precos, setPrecos] = useState({});
+
+  // Carrega perfil e conta do banco ao montar
+  useEffect(() => {
+    carregarPerfil().then(p => setPerfil(p));
+    fetch(`${PROXY}/api/conta`)
+      .then(r => r.json())
+      .then(data => { if (data.success && data.data) setConta(data.data); })
+      .catch(() => {});
+  }, []);
 
   // Gráfico de rentabilidade
   const [periodo, setPeriodo] = useState("1m");
@@ -228,10 +225,10 @@ export default function Home({ setPage }) {
 
   const salvarContaInfo = (novaConta) => {
     setConta(novaConta);
-    salvarConta(novaConta);
+    salvarContaBanco(novaConta);
   };
 
-  const patrimonioTotal = (conta.saldoConta || 0) + (conta.valorInvestido || 0);
+  const patrimonioTotal = ((conta || CONTA_DEFAULT).saldoConta || 0) + ((conta || CONTA_DEFAULT).valorInvestido || 0);
 
   const perfilInfo = perfil ? {
     conservador: { nome: "Conservador", icone: "🛡️", cor: "#6af" },
