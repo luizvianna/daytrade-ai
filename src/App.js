@@ -126,12 +126,12 @@ export default function App() {
 
           {/* Logo / título da página */}
           {page === "home" ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div key="header-home" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{ width: "28px", height: "28px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "7px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px" }}>⚡</div>
               <span style={{ fontWeight: "700", fontSize: "15px" }}>TRADE<span style={{ color: "#00e5a0" }}>AI</span></span>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div key="header-page" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontSize: "18px" }}>{pageInfo.icon}</span>
               <span style={{ fontWeight: "700", fontSize: "15px" }}>{pageInfo.label}</span>
             </div>
@@ -186,7 +186,7 @@ export default function App() {
       )}
 
       {/* ── Conteúdo da página ── */}
-      <PageContent page={page} setPage={setPage} />
+      <PageContent key={page} page={page} setPage={setPage} />
     </div>
   );
 }
