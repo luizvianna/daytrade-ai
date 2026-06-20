@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
-const STORAGE_KEY = "tradeai_alertas";
 
 const EMAILJS_SERVICE_ID = "service_ihson4a";
 const EMAILJS_TEMPLATE_ID = "kjk77se";
@@ -15,15 +14,62 @@ const TODOS_ATIVOS = [
   "BTC-USD","ETH-USD","BNB-USD","SOL-USD",
 ];
 
-function salvarAlertas(alertas) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(alertas));
+// ── API calls ao proxy (substitui localStorage) ──────────────
+async function carregarAlertasBanco() {
+  try {
+    const r = await fetch(`${PROXY}/api/alertas`);
+    const data = await r.json();
+    if (data.success) {
+      return data.data.map(a => ({
+        id: a.id,
+        ativo: a.ativo,
+        tipo: a.tipo,
+        direcao: a.direcao,
+        valor: a.valor,
+        email: a.emailAtivo,
+        ativoFlag: a.ativoFlag,
+        disparado: a.disparado,
+        precoDisparo: a.precoDisparo,
+        criadoEm: new Date(a.criadoEm).toLocaleString("pt-BR"),
+        disparadoEm: a.disparadoEm ? new Date(a.disparadoEm).toLocaleString("pt-BR") : null,
+      }));
+    }
+    return [];
+  } catch { return []; }
 }
 
-function carregarAlertas() {
+async function criarAlertaBanco(alerta) {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
+    const r = await fetch(`${PROXY}/api/alertas`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ativo: alerta.ativo,
+        tipo: alerta.tipo,
+        direcao: alerta.direcao,
+        valor: alerta.valor,
+        emailAtivo: alerta.email,
+      }),
+    });
+    const data = await r.json();
+    return data.success ? data.id : null;
+  } catch { return null; }
+}
+
+async function deletarAlertaBanco(id) {
+  try {
+    await fetch(`${PROXY}/api/alertas/${id}`, { method: "DELETE" });
+  } catch (e) { console.error("Erro ao deletar alerta:", e.message); }
+}
+
+async function atualizarAlertaBanco(id, campos) {
+  try {
+    await fetch(`${PROXY}/api/alertas/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(campos),
+    });
+  } catch (e) { console.error("Erro ao atualizar alerta:", e.message); }
 }
 
 async function sendEmail(params) {
@@ -45,7 +91,7 @@ async function sendEmail(params) {
 
 function fmt(v) { return v !== undefined && v !== null ? `R$ ${Number(v).toFixed(2)}` : "—"; }
 
-// ── Componente de alerta disparado ───────────────────────────────
+// ── Notificação de alerta disparado ──────────────────────────
 function AlertaNotificacao({ alerta, onDismiss }) {
   useEffect(() => { const t = setTimeout(onDismiss, 10000); return () => clearTimeout(t); }, [onDismiss]);
   const cor = alerta.tipo === "subiu" ? "#00e5a0" : alerta.tipo === "caiu" ? "#ff4d6d" : "#ffd60a";
@@ -66,14 +112,13 @@ function AlertaNotificacao({ alerta, onDismiss }) {
   );
 }
 
-// ── Card de alerta ────────────────────────────────────────────────
+// ── Card de alerta ────────────────────────────────────────────
 function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
-  const ativo = alerta.ativo;
   const preco = precoAtual || 0;
   const diff = alerta.tipo === "preco_exato"
     ? ((preco - alerta.valor) / alerta.valor * 100).toFixed(2)
     : null;
-  const cor = alerta.disparado ? "#555" : alerta.ativo ? "#00e5a0" : "#ffd60a";
+  const cor = alerta.disparado ? "#555" : alerta.ativoFlag ? "#00e5a0" : "#ffd60a";
   const progressoPct = alerta.tipo === "preco_exato" && preco && alerta.valor
     ? Math.min(100, Math.abs((preco / alerta.valor) * 100))
     : null;
@@ -82,8 +127,8 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
     <div style={{ background: "#0d1320", border: `1px solid ${alerta.disparado ? "#1e2d45" : cor + "44"}`, borderRadius: "12px", padding: "14px", marginBottom: "10px", opacity: alerta.disparado ? 0.6 : 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-            <span style={{ color: "#fff", fontWeight: "700", fontSize: "15px", fontFamily: "monospace" }}>{ativo}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px", flexWrap: "wrap" }}>
+            <span style={{ color: "#fff", fontWeight: "700", fontSize: "15px", fontFamily: "monospace" }}>{alerta.ativo}</span>
             <span style={{ background: `${cor}22`, color: cor, border: `1px solid ${cor}44`, borderRadius: "4px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace", fontWeight: "700" }}>
               {alerta.tipo === "preco_exato" ? "💰 PREÇO EXATO" : alerta.direcao === "sobe" ? "📈 SUBIDA %" : "📉 QUEDA %"}
             </span>
@@ -92,14 +137,13 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
           <div style={{ color: "#aaa", fontSize: "12px" }}>
             {alerta.tipo === "preco_exato"
               ? `Alerta quando atingir ${fmt(alerta.valor)}`
-              : `Alerta quando ${alerta.direcao === "sobe" ? "subir" : "cair"} ${alerta.valor}%`
-            }
+              : `Alerta quando ${alerta.direcao === "sobe" ? "subir" : "cair"} ${alerta.valor}%`}
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
-          <button onClick={() => onToggle(alerta.id)}
-            style={{ background: alerta.ativo ? "#00e5a022" : "#111a27", border: `1px solid ${alerta.ativo ? "#00e5a044" : "#1e2d45"}`, color: alerta.ativo ? "#00e5a0" : "#555", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
-            {alerta.ativo ? "ON" : "OFF"}
+          <button onClick={() => onToggle(alerta.id, alerta.ativoFlag)}
+            style={{ background: alerta.ativoFlag ? "#00e5a022" : "#111a27", border: `1px solid ${alerta.ativoFlag ? "#00e5a044" : "#1e2d45"}`, color: alerta.ativoFlag ? "#00e5a0" : "#555", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
+            {alerta.ativoFlag ? "ON" : "OFF"}
           </button>
           <button onClick={() => onDelete(alerta.id)}
             style={{ background: "#ff4d6d22", border: "1px solid #ff4d6d44", color: "#ff4d6d", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
@@ -136,21 +180,20 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
       )}
 
       <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", marginTop: "8px" }}>
-        Criado: {alerta.criadoEm} {alerta.disparadoEm && `· Disparado: ${alerta.disparadoEm}`}
+        Criado: {alerta.criadoEm}{alerta.disparadoEm && ` · Disparado: ${alerta.disparadoEm}`}
       </div>
     </div>
   );
 }
 
-// ── Componente principal ──────────────────────────────────────────
+// ── Componente principal ──────────────────────────────────────
 export default function Alertas() {
-  const [alertas, setAlertas] = useState(carregarAlertas);
-  const [historico, setHistorico] = useState([]);
+  const [alertas, setAlertas] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [precos, setPrecos] = useState({});
   const [notificacao, setNotificacao] = useState(null);
   const [monitorando, setMonitorando] = useState(false);
 
-  // Form
   const [novoAtivo, setNovoAtivo] = useState("PETR4");
   const [novoTipo, setNovoTipo] = useState("preco_exato");
   const [novoDirecao, setNovoDirecao] = useState("sobe");
@@ -162,7 +205,14 @@ export default function Alertas() {
   const alertasRef = useRef(alertas);
   alertasRef.current = alertas;
 
-  // Buscar preços
+  // Carrega alertas do banco ao montar
+  useEffect(() => {
+    carregarAlertasBanco().then(data => {
+      setAlertas(data);
+      setLoading(false);
+    });
+  }, []);
+
   const fetchPrecos = useCallback(async () => {
     const ativos = [...new Set(alertasRef.current.map(a => a.ativo))];
     if (!ativos.length) return;
@@ -174,26 +224,21 @@ export default function Alertas() {
     } catch (e) { console.error(e); }
   }, []);
 
-  // Verificar alertas
   const verificarAlertas = useCallback(async () => {
     const data = await fetchPrecos();
     if (!data) return;
-
     const agora = new Date().toLocaleTimeString("pt-BR");
-    let atualizados = false;
 
-    const novosAlertas = alertasRef.current.map(alerta => {
-      if (!alerta.ativo || alerta.disparado) return alerta;
+    for (const alerta of alertasRef.current) {
+      if (!alerta.ativoFlag || alerta.disparado) continue;
       const precoAtual = data[alerta.ativo]?.price;
-      if (!precoAtual) return alerta;
+      if (!precoAtual) continue;
 
-      let disparar = false;
-      let tipo = "";
-      let mensagem = "";
+      let disparar = false, tipo = "", mensagem = "";
 
       if (alerta.tipo === "preco_exato") {
         const diff = Math.abs((precoAtual - alerta.valor) / alerta.valor * 100);
-        if (diff <= 0.5) { // Dentro de 0.5% do alvo
+        if (diff <= 0.5) {
           disparar = true;
           tipo = precoAtual >= alerta.valor ? "subiu" : "caiu";
           mensagem = `Atingiu o preço alvo de ${fmt(alerta.valor)}`;
@@ -210,36 +255,30 @@ export default function Alertas() {
       }
 
       if (disparar) {
-        atualizados = true;
-        const alertaDisparado = { ...alerta, disparado: true, disparadoEm: agora, precoDisparo: precoAtual };
+        // Atualiza no banco
+        await atualizarAlertaBanco(alerta.id, { disparado: true, precoDisparo: precoAtual });
 
-        setHistorico(prev => [{ ...alertaDisparado, tipo, mensagem, precoAtual }, ...prev].slice(0, 20));
+        // Atualiza estado local
+        setAlertas(prev => prev.map(a =>
+          a.id === alerta.id
+            ? { ...a, disparado: true, precoDisparo: precoAtual, disparadoEm: agora }
+            : a
+        ));
+
         setNotificacao({ ativo: alerta.ativo, tipo, mensagem, precoAtual });
 
         if (alerta.email) {
           sendEmail({
             tipo_sinal: `🔔 ALERTA: ${alerta.ativo}`,
-            ativo: alerta.ativo,
-            preco: fmt(precoAtual),
-            stop_loss: "—",
-            take_profit: fmt(alerta.tipo === "preco_exato" ? alerta.valor : precoAtual),
-            confianca: "—",
-            analise: mensagem,
+            ativo: alerta.ativo, preco: fmt(precoAtual),
+            stop_loss: "—", take_profit: fmt(alerta.valor),
+            confianca: "—", analise: mensagem,
           });
         }
-
-        return alertaDisparado;
       }
-      return alerta;
-    });
-
-    if (atualizados) {
-      setAlertas(novosAlertas);
-      salvarAlertas(novosAlertas);
     }
   }, [fetchPrecos]);
 
-  // Monitoramento automático
   useEffect(() => {
     if (!monitorando) return;
     verificarAlertas();
@@ -247,59 +286,53 @@ export default function Alertas() {
     return () => clearInterval(interval);
   }, [monitorando, verificarAlertas]);
 
-  // Inicia monitoramento se há alertas ativos
   useEffect(() => {
-    const temAtivos = alertas.some(a => a.ativo && !a.disparado);
+    const temAtivos = alertas.some(a => a.ativoFlag && !a.disparado);
     setMonitorando(temAtivos);
   }, [alertas]);
 
-  const criarAlerta = () => {
+  const criarAlerta = async () => {
     if (!novoValor || isNaN(parseFloat(novoValor))) return;
     setSalvando(true);
 
     const novoAlerta = {
-      id: Date.now(),
-      ativo: novoAtivo,
-      tipo: novoTipo,
-      direcao: novoDirecao,
-      valor: parseFloat(novoValor),
-      email: novoEmail,
-      ativo: true,
-      disparado: false,
-      criadoEm: new Date().toLocaleString("pt-BR"),
-      disparadoEm: null,
+      ativo: novoAtivo, tipo: novoTipo, direcao: novoDirecao,
+      valor: parseFloat(novoValor), email: novoEmail,
     };
 
-    const novos = [novoAlerta, ...alertas];
-    setAlertas(novos);
-    salvarAlertas(novos);
+    const id = await criarAlertaBanco(novoAlerta);
+    if (id) {
+      setAlertas(prev => [{
+        ...novoAlerta, id, ativoFlag: true, disparado: false,
+        criadoEm: new Date().toLocaleString("pt-BR"), disparadoEm: null,
+      }, ...prev]);
+    }
+
     setNovoValor("");
     setSalvando(false);
     setAba("ativos");
   };
 
-  const deletarAlerta = (id) => {
-    const novos = alertas.filter(a => a.id !== id);
-    setAlertas(novos);
-    salvarAlertas(novos);
+  const deletarAlerta = async (id) => {
+    await deletarAlertaBanco(id);
+    setAlertas(prev => prev.filter(a => a.id !== id));
   };
 
-  const toggleAlerta = (id) => {
-    const novos = alertas.map(a => a.id === id ? { ...a, ativo: !a.ativo, disparado: false } : a);
-    setAlertas(novos);
-    salvarAlertas(novos);
+  const toggleAlerta = async (id, ativoAtual) => {
+    const novoFlag = !ativoAtual;
+    await atualizarAlertaBanco(id, { ativoFlag: novoFlag, disparado: false });
+    setAlertas(prev => prev.map(a =>
+      a.id === id ? { ...a, ativoFlag: novoFlag, disparado: false } : a
+    ));
   };
 
-  const alertasAtivos = alertas.filter(a => a.ativo && !a.disparado);
+  const alertasAtivos = alertas.filter(a => a.ativoFlag && !a.disparado);
   const alertasDisparados = alertas.filter(a => a.disparado);
 
   return (
     <div style={{ padding: "14px", maxWidth: "800px", margin: "0 auto" }}>
-
-
       {notificacao && <AlertaNotificacao alerta={notificacao} onDismiss={() => setNotificacao(null)} />}
 
-      {/* Header */}
       <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>🔔 <span style={{ color: "#00e5a0" }}>Alertas</span> de Preço</h1>
@@ -313,7 +346,6 @@ export default function Alertas() {
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "10px", marginBottom: "16px" }}>
         {[
           { label: "ATIVOS", value: alertasAtivos.length, color: "#00e5a0" },
@@ -327,7 +359,6 @@ export default function Alertas() {
         ))}
       </div>
 
-      {/* Abas */}
       <div style={{ display: "flex", gap: "4px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "4px", marginBottom: "14px" }}>
         {[
           { id: "ativos", label: `🔔 Ativos (${alertasAtivos.length})` },
@@ -341,10 +372,11 @@ export default function Alertas() {
         ))}
       </div>
 
-      {/* Aba: Alertas ativos */}
       {aba === "ativos" && (
         <div>
-          {alertasAtivos.length === 0 ? (
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "#00e5a0" }}>⏳ Carregando alertas...</div>
+          ) : alertasAtivos.length === 0 ? (
             <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "40px", textAlign: "center" }}>
               <div style={{ fontSize: "40px", marginBottom: "12px" }}>🔕</div>
               <div style={{ color: "#444", fontSize: "14px", marginBottom: "8px" }}>Nenhum alerta ativo</div>
@@ -361,21 +393,18 @@ export default function Alertas() {
         </div>
       )}
 
-      {/* Aba: Criar alerta */}
       {aba === "criar" && (
         <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "20px" }}>
           <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "16px" }}>NOVO ALERTA</div>
 
-          {/* Ativo */}
           <div style={{ marginBottom: "12px" }}>
             <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Ativo</label>
             <select value={novoAtivo} onChange={e => setNovoAtivo(e.target.value)}
               style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 12px", fontSize: "14px", fontFamily: "monospace" }}>
-              {TODOS_ATIVOS.map(a => <option key={a} value={a}>{a} {precos[a] ? `· R$${precos[a].price?.toFixed(2)}` : ""}</option>)}
+              {TODOS_ATIVOS.map(a => <option key={a} value={a}>{a}{precos[a] ? ` · R$${precos[a].price?.toFixed(2)}` : ""}</option>)}
             </select>
           </div>
 
-          {/* Tipo */}
           <div style={{ marginBottom: "12px" }}>
             <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Tipo de alerta</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -388,7 +417,6 @@ export default function Alertas() {
             </div>
           </div>
 
-          {/* Direção (só para variação %) */}
           {novoTipo === "variacao_pct" && (
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Direção</label>
@@ -403,10 +431,9 @@ export default function Alertas() {
             </div>
           )}
 
-          {/* Valor */}
           <div style={{ marginBottom: "12px" }}>
             <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>
-              {novoTipo === "preco_exato" ? "Preço alvo (R$)" : `Variação alvo (%)`}
+              {novoTipo === "preco_exato" ? "Preço alvo (R$)" : "Variação alvo (%)"}
             </label>
             <input type="number" value={novoValor} onChange={e => setNovoValor(e.target.value)} step="0.01"
               placeholder={novoTipo === "preco_exato" ? "Ex: 45.50" : "Ex: 5"}
@@ -418,7 +445,6 @@ export default function Alertas() {
             )}
           </div>
 
-          {/* Email */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#111a27", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
             <div>
               <div style={{ color: "#888", fontSize: "12px" }}>📧 Notificação por email</div>
@@ -437,10 +463,11 @@ export default function Alertas() {
         </div>
       )}
 
-      {/* Aba: Histórico */}
       {aba === "historico" && (
         <div>
-          {alertasDisparados.length === 0 ? (
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px", color: "#00e5a0" }}>⏳ Carregando...</div>
+          ) : alertasDisparados.length === 0 ? (
             <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "40px", textAlign: "center" }}>
               <div style={{ fontSize: "40px", marginBottom: "12px" }}>📋</div>
               <div style={{ color: "#444", fontSize: "14px" }}>Nenhum alerta disparado ainda</div>
@@ -455,7 +482,7 @@ export default function Alertas() {
 
       <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", marginTop: "14px" }}>
         <span style={{ color: "#444", fontSize: "11px" }}>
-          💾 Alertas salvos no navegador · 🔄 Verificação a cada 30s · 📧 Email via EmailJS
+          🗄️ Alertas salvos no banco Supabase · 🔄 Verificação a cada 30s · 📧 Email via EmailJS
         </span>
       </div>
     </div>
