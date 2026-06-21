@@ -4,6 +4,16 @@ import SeletorHorizonte from "./SeletorHorizonte";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
+async function salvarNoHistorico({ ativo, horizonte, recomendacao, score, precoNoMomento, analise }) {
+  try {
+    await fetch(`${PROXY}/api/historico`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ativo, origem: "chat", horizonte, recomendacao, score, precoNoMomento, analise }),
+    });
+  } catch (e) { console.error("Erro ao salvar histórico:", e.message); }
+}
+
 const SUGESTOES = [
   "Analise PETR4 para longo prazo",
   "Quais FIIs pagam os melhores dividendos?",
@@ -203,6 +213,29 @@ FORMATO DE RESPOSTA:
           analysis = JSON.parse(jsonMatch[0]);
           content = content.replace(jsonMatch[0], "").trim();
         } catch {}
+      }
+
+      // Salva no histórico se a IA deu uma recomendação estruturada
+      // e conseguimos identificar o ativo mencionado na pergunta
+      if (analysis?.recomendacao) {
+        const tickerMatch = userText.match(/[A-Z]{4}[0-9]{1,2}|BTC|ETH|BNB|SOL/i);
+        if (tickerMatch) {
+          let precoNoMomento = null;
+          try {
+            const pr = await fetch(`${PROXY}/api/prices?tickers=${tickerMatch[0].toUpperCase()}`);
+            const prData = await pr.json();
+            precoNoMomento = prData[tickerMatch[0].toUpperCase()]?.price || null;
+          } catch {}
+
+          salvarNoHistorico({
+            ativo: tickerMatch[0].toUpperCase(),
+            horizonte: horizonte || null,
+            recomendacao: analysis.recomendacao,
+            score: analysis.score || null,
+            precoNoMomento,
+            analise: content.slice(0, 300),
+          });
+        }
       }
 
       const aiMsg = {
