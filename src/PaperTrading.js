@@ -435,7 +435,7 @@ export default function PaperTrading() {
       });
 
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || "Erro IA");
+      if (!data.success) throw new Error(`${data.error || "Erro IA"} | status:${response.status} | details:${data.details || "—"}`);
       const parsed = data.data;
 
       const analysisResult = { time: new Date().toLocaleTimeString("pt-BR"), action: parsed.action, confidence: parsed.confidence, risk: parsed.risk, reasoning: parsed.reasoning, fullReasoning: parsed.fullReasoning, indicatorNarrative: parsed.indicatorNarrative || [], pros: parsed.pros || [], cons: parsed.cons || [], price };
