@@ -9,6 +9,7 @@ export const MENU_ITEMS = [
   { section: "INTELIGÊNCIA ARTIFICIAL", items: [
     { id: "chat", label: "Bate-papo IA", icon: "💬" },
     { id: "score", label: "Pontuação", icon: "⭐" },
+    { id: "historico", label: "Histórico", icon: "📋" },
     { id: "alertas", label: "Alertas", icon: "🔔" },
     { id: "relatorio", label: "Relatório", icon: "📅" },
   ]},
@@ -73,7 +74,7 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout }) {
               {section.items.map(item => {
                 const ativo = page === item.id;
                 return (
-                  <button key={item.id} onClick={() => { setPage(item.id); onClose(); }}
+                  <button key={item.id} className="sidebar-item" onClick={() => { setPage(item.id); onClose(); }}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: "12px",
                       background: ativo ? "#00e5a015" : "transparent",

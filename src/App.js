@@ -6,6 +6,7 @@ import Login from "./Login";
 import Chat from "./Chat";
 import Alertas from "./Alertas";
 import Score from "./Score";
+import Historico from "./Historico";
 import Relatorio from "./Relatorio";
 import Perfil from "./Perfil";
 import Home from "./Home";
@@ -46,6 +47,7 @@ function PageContent({ page, setPage }) {
     case "investimentos":return <Investimentos setPage={setPage} />;
     case "chat":         return <Chat />;
     case "score":        return <Score />;
+    case "historico":    return <Historico />;
     case "alertas":      return <Alertas />;
     case "relatorio":    return <Relatorio />;
     case "backtesting":  return <Backtesting />;

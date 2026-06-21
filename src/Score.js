@@ -11,6 +11,16 @@ const ATIVOS_PARA_SCORE = {
   "Cripto":["BTC-USD","ETH-USD","BNB-USD","SOL-USD"],
 };
 
+async function salvarNoHistorico({ ativo, origem, horizonte, recomendacao, score, precoNoMomento, analise }) {
+  try {
+    await fetch(`${PROXY}/api/historico`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ativo, origem, horizonte, recomendacao, score, precoNoMomento, analise }),
+    });
+  } catch (e) { console.error("Erro ao salvar histórico:", e.message); }
+}
+
 function ScoreBar({ score, size = "normal" }) {
   const color = score >= 7 ? "#00e5a0" : score >= 5 ? "#ffd60a" : "#ff4d6d";
   const h = size === "small" ? "5px" : "8px";
@@ -251,6 +261,14 @@ Responda APENAS JSON:
           horizonte: parsed.horizonte || horizonteInfo?.label.toLowerCase() || "médio prazo",
           preco, variacao, tendencia, momentum,
           analisadoEm: new Date().toLocaleTimeString("pt-BR"),
+        });
+
+        // Salva no histórico de recomendações (não bloqueia o fluxo)
+        salvarNoHistorico({
+          ativo: ticker, origem: "score", horizonte: horizonte || null,
+          recomendacao: parsed.recomendacao || "AGUARDAR",
+          score: parsed.score || 5, precoNoMomento: preco,
+          analise: parsed.analise || "",
         });
 
       } catch (e) {
