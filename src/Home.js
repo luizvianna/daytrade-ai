@@ -18,7 +18,7 @@ const PERIODOS = [
   { id: "tudo",label: "Tudo", range: "5y", interval: "1mo" },
 ];
 
-const CONTA_DEFAULT = { saldoConta: 0, valorInvestido: 0, lancamentosFuturos: 0, conectado: false, corretora: "" };
+const CONTA_DEFAULT = { saldoConta: 0, valorInvestido: 0, lancamentosFuturos: 0, conectado: false, corretora: "", valorRendaFixa: 0, valorRendaVariavel: 0 };
 
 async function salvarContaBanco(conta) {
   try {
@@ -100,6 +100,8 @@ function EditarContaModal({ conta, onSave, onClose }) {
   const [valorInvestido, setValorInvestido] = useState(conta.valorInvestido || "");
   const [lancamentosFuturos, setLancamentosFuturos] = useState(conta.lancamentosFuturos || "");
   const [corretora, setCorretora] = useState(conta.corretora || "");
+  const [valorRendaFixa, setValorRendaFixa] = useState(conta.valorRendaFixa || "");
+  const [valorRendaVariavel, setValorRendaVariavel] = useState(conta.valorRendaVariavel || "");
 
   const salvar = () => {
     onSave({
@@ -108,6 +110,8 @@ function EditarContaModal({ conta, onSave, onClose }) {
       valorInvestido: parseFloat(valorInvestido) || 0,
       lancamentosFuturos: parseFloat(lancamentosFuturos) || 0,
       corretora,
+      valorRendaFixa: parseFloat(valorRendaFixa) || 0,
+      valorRendaVariavel: parseFloat(valorRendaVariavel) || 0,
     });
     onClose();
   };
@@ -149,6 +153,20 @@ function EditarContaModal({ conta, onSave, onClose }) {
           <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Lançamentos futuros (negativo = saída)</label>
           <input type="number" value={lancamentosFuturos} onChange={e => setLancamentosFuturos(e.target.value)} placeholder="0,00"
             style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px", fontFamily: "monospace" }} />
+        </div>
+
+        <div style={{ background: "#00e5a008", border: "1px solid #00e5a022", borderRadius: "10px", padding: "12px", marginBottom: "18px" }}>
+          <div style={{ color: "#00e5a0", fontSize: "11px", fontWeight: "700", marginBottom: "10px" }}>📊 Para comparar com seu perfil ideal (opcional)</div>
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Quanto está em Renda Fixa (Tesouro, CDB, LCI...)</label>
+            <input type="number" value={valorRendaFixa} onChange={e => setValorRendaFixa(e.target.value)} placeholder="0,00"
+              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px", fontFamily: "monospace" }} />
+          </div>
+          <div>
+            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Quanto está em Renda Variável (ações, FIIs, cripto...)</label>
+            <input type="number" value={valorRendaVariavel} onChange={e => setValorRendaVariavel(e.target.value)} placeholder="0,00"
+              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px", fontFamily: "monospace" }} />
+          </div>
         </div>
 
         <button onClick={salvar}
@@ -236,6 +254,20 @@ export default function Home({ setPage }) {
     arrojado: { nome: "Arrojado", icone: "🚀", cor: "#00e5a0" },
     agressivo: { nome: "Agressivo", icone: "⚡", cor: "#ff9f43" },
   }[perfil.tipoPerfil] : null;
+
+  // ── Comparação alocação ideal (do perfil) vs real (Renda Fixa / Variável) ──
+  const alocacaoIdeal = perfil?.perfilInfo?.alocacao;
+  const idealRendaFixaPct = alocacaoIdeal ? (alocacaoIdeal["Renda Fixa"] || 0) + (alocacaoIdeal["Tesouro Direto"] || 0) : null;
+  const idealRendaVariavelPct = alocacaoIdeal ? 100 - idealRendaFixaPct : null;
+
+  const totalAlocadoReal = (conta.valorRendaFixa || 0) + (conta.valorRendaVariavel || 0);
+  const realRendaFixaPct = totalAlocadoReal > 0 ? ((conta.valorRendaFixa || 0) / totalAlocadoReal) * 100 : null;
+  const realRendaVariavelPct = totalAlocadoReal > 0 ? 100 - realRendaFixaPct : null;
+
+  const desvioPct = (idealRendaFixaPct !== null && realRendaFixaPct !== null)
+    ? Math.abs(idealRendaFixaPct - realRendaFixaPct)
+    : null;
+  const desvioAlto = desvioPct !== null && desvioPct >= 15;
 
   const oculto = (val) => valoresOcultos ? "••••••" : val;
   const rentColor = rentabilidade === null ? "#888" : rentabilidade >= 0 ? "#00e5a0" : "#ff4d6d";
@@ -373,6 +405,54 @@ export default function Home({ setPage }) {
             </div>
           </div>
           <span style={{ color: "#ffd60a", fontSize: "12px" }}>Iniciar →</span>
+        </div>
+      )}
+
+      {/* Comparação: Alocação ideal vs real */}
+      {alocacaoIdeal && (
+        <div style={{ background: desvioAlto ? "#ff9f4311" : "#0d1320", border: `1px solid ${desvioAlto ? "#ff9f4344" : "#1e2d45"}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <span style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>📊 ALOCAÇÃO: IDEAL vs REAL</span>
+            <button onClick={() => setShowEditModal(true)}
+              style={{ background: "none", border: "none", color: "#00e5a0", fontSize: "11px", cursor: "pointer" }}>
+              {totalAlocadoReal > 0 ? "Editar →" : "Informar valores →"}
+            </button>
+          </div>
+
+          {totalAlocadoReal === 0 ? (
+            <div style={{ color: "#666", fontSize: "12px", lineHeight: "1.6" }}>
+              Informe quanto você tem em Renda Fixa e Renda Variável (no botão "Editar Saldos") para comparar com a alocação sugerida pelo seu perfil.
+            </div>
+          ) : (
+            <>
+              {desvioAlto && (
+                <div style={{ background: "#ff9f4322", borderRadius: "8px", padding: "8px 12px", marginBottom: "12px" }}>
+                  <span style={{ color: "#ff9f43", fontSize: "12px" }}>
+                    ⚠️ Sua carteira está desviada {desvioPct.toFixed(0)} pontos da alocação ideal. Considere rebalancear.
+                  </span>
+                </div>
+              )}
+
+              {[
+                { label: "Renda Fixa", ideal: idealRendaFixaPct, real: realRendaFixaPct, cor: "#6af" },
+                { label: "Renda Variável", ideal: idealRendaVariavelPct, real: realRendaVariavelPct, cor: "#00e5a0" },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ color: "#aaa", fontSize: "12px" }}>{item.label}</span>
+                    <span style={{ color: "#555", fontSize: "11px", fontFamily: "monospace" }}>
+                      Ideal: {item.ideal.toFixed(0)}% · Real: {item.real.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div style={{ position: "relative", height: "10px", background: "#1e2d45", borderRadius: "5px", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", height: "100%", width: `${item.real}%`, background: item.cor, borderRadius: "5px", transition: "width 0.5s" }} />
+                    <div style={{ position: "absolute", left: `${item.ideal}%`, top: "-2px", width: "2px", height: "14px", background: "#fff" }} title="Alvo ideal" />
+                  </div>
+                </div>
+              ))}
+              <div style={{ color: "#333", fontSize: "10px", marginTop: "4px" }}>Barra colorida = sua alocação real · Linha branca = alvo do seu perfil</div>
+            </>
+          )}
         </div>
       )}
 
