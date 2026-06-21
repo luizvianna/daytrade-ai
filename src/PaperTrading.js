@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 const CAPITAL_INICIAL = 1000;
-const GROQ_API_KEY = process.env.REACT_APP_GROQ_KEY || "";
 const AI_INTERVAL = 120;
 
 const EMAILJS_SERVICE_ID = "service_ihson4a";
@@ -426,22 +425,18 @@ export default function PaperTrading() {
       const lastC = cands[cands.length - 1];
       const priceVsBB = price > bb.upper ? "ACIMA da banda superior" : price < bb.lower ? "ABAIXO da banda inferior" : "DENTRO das bandas";
 
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      const response = await fetch(`${PROXY}/api/ai/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 600, temperature: 0.2,
-          messages: [
-            { role: "system", content: "Trader quantitativo B3. Responda APENAS JSON válido." },
-            { role: "user", content: `Ativo: ${asset} | Preço: R$${price.toFixed(2)} | Timeframe: 5min\nRSI: ${rsi.toFixed(1)} | SMA5: ${sma5.toFixed(2)} | SMA20: ${sma20.toFixed(2)}\nMACD: ${macd.macd.toFixed(3)} | Volume: ${volume.ratio.toFixed(2)}x | Bollinger: ${priceVsBB}\nTendência: ${trend} (${bullCandles}/20) | Último: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)}\nCapital: R$${cap.toFixed(2)} | Posição: ${pos ? `${pos.type} desde R$${pos.entryPrice.toFixed(2)}` : "Nenhuma"}\nSL: ${stopLoss}% | TP: ${takeProfit}%\n${!pos ? "Decida: COMPRAR, VENDER ou AGUARDAR" : "Decida: MANTER ou FECHAR"} (confiança ≥ 65%)\nResponda JSON: {"action":"${!pos ? "COMPRAR|VENDER|AGUARDAR" : "MANTER|FECHAR"}","confidence":0-100,"risk":"BAIXO|MÉDIO|ALTO","reasoning":"1 frase","fullReasoning":"4 frases completas","indicatorNarrative":[{"indicator":"RSI","observation":"texto","bullish":true,"bearish":false}],"pros":["a","b"],"cons":["c"],"size":${!pos ? "valor R$" : 0}}` }
-          ],
+          systemPrompt: "Trader quantitativo B3. Responda APENAS JSON válido.",
+          prompt: `Ativo: ${asset} | Preço: R$${price.toFixed(2)} | Timeframe: 5min\nRSI: ${rsi.toFixed(1)} | SMA5: ${sma5.toFixed(2)} | SMA20: ${sma20.toFixed(2)}\nMACD: ${macd.macd.toFixed(3)} | Volume: ${volume.ratio.toFixed(2)}x | Bollinger: ${priceVsBB}\nTendência: ${trend} (${bullCandles}/20) | Último: A${lastC.open.toFixed(2)} F${lastC.close.toFixed(2)}\nCapital: R$${cap.toFixed(2)} | Posição: ${pos ? `${pos.type} desde R$${pos.entryPrice.toFixed(2)}` : "Nenhuma"}\nSL: ${stopLoss}% | TP: ${takeProfit}%\n${!pos ? "Decida: COMPRAR, VENDER ou AGUARDAR" : "Decida: MANTER ou FECHAR"} (confiança ≥ 65%)\nResponda JSON: {"action":"${!pos ? "COMPRAR|VENDER|AGUARDAR" : "MANTER|FECHAR"}","confidence":0-100,"risk":"BAIXO|MÉDIO|ALTO","reasoning":"1 frase","fullReasoning":"4 frases completas","indicatorNarrative":[{"indicator":"RSI","observation":"texto","bullish":true,"bearish":false}],"pros":["a","b"],"cons":["c"],"size":${!pos ? "valor R$" : 0}}`,
         }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Erro Groq");
-      const text = data.choices?.[0]?.message?.content || "";
-      const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+      if (!data.success) throw new Error(data.error || "Erro IA");
+      const parsed = data.data;
 
       const analysisResult = { time: new Date().toLocaleTimeString("pt-BR"), action: parsed.action, confidence: parsed.confidence, risk: parsed.risk, reasoning: parsed.reasoning, fullReasoning: parsed.fullReasoning, indicatorNarrative: parsed.indicatorNarrative || [], pros: parsed.pros || [], cons: parsed.cons || [], price };
       setLastAnalysis(analysisResult);
