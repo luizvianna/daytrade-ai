@@ -449,13 +449,17 @@ export default function PaperTrading() {
       if (!pos && parsed.action === "COMPRAR" && parsed.confidence >= 65) {
         const size = Math.min(parsed.size || cap * 0.8, cap * 0.9);
         const newPos = { asset, type: "COMPRA", entryPrice: price, size, sl: price*(1-sl/100), tp: price*(1+tp/100), openedAt: Date.now() };
+        const newCapital = cap - size;
         setPosition(newPos); positionRef.current = newPos;
+        setCapital(newCapital); capitalRef.current = newCapital;
         setAlert({ signal: "COMPRA", title: "▲ IA ABRIU COMPRA", message: `${asset} @ ${fmt(price)} — ${parsed.reasoning}` });
         if (emailEnabledRef.current) { await sendEmail({ tipo_sinal: "▲ SINAL DE COMPRA", ativo: asset, preco: fmt(price), stop_loss: fmt(price*(1-sl/100)), take_profit: fmt(price*(1+tp/100)), confianca: parsed.confidence, analise: parsed.fullReasoning || parsed.reasoning }); setEmailStatus("📧 Email enviado!"); setTimeout(() => setEmailStatus(""), 4000); }
       } else if (!pos && parsed.action === "VENDER" && parsed.confidence >= 65) {
         const size = Math.min(parsed.size || cap * 0.8, cap * 0.9);
         const newPos = { asset, type: "VENDA", entryPrice: price, size, sl: price*(1+sl/100), tp: price*(1-tp/100), openedAt: Date.now() };
+        const newCapital = cap - size;
         setPosition(newPos); positionRef.current = newPos;
+        setCapital(newCapital); capitalRef.current = newCapital;
         setAlert({ signal: "VENDA", title: "▼ IA ABRIU VENDA", message: `${asset} @ ${fmt(price)} — ${parsed.reasoning}` });
         if (emailEnabledRef.current) { await sendEmail({ tipo_sinal: "▼ SINAL DE VENDA", ativo: asset, preco: fmt(price), stop_loss: fmt(price*(1+sl/100)), take_profit: fmt(price*(1-tp/100)), confianca: parsed.confidence, analise: parsed.fullReasoning || parsed.reasoning }); setEmailStatus("📧 Email enviado!"); setTimeout(() => setEmailStatus(""), 4000); }
       } else if (pos && parsed.action === "FECHAR") {
