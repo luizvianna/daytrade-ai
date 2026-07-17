@@ -5,7 +5,7 @@ const CAPITAL_INICIAL = 1000;
 const AI_INTERVAL = 120;
 
 const EMAILJS_SERVICE_ID = "service_ihson4a";
-const EMAILJS_TEMPLATE_ID = "kjk77se";
+const EMAILJS_TEMPLATE_ID = "template_y30vyxv";
 const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_KEY || "";
 
 const ASSETS = [
