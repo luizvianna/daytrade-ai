@@ -47,16 +47,16 @@ async function sendEmailRelatorio(conteudo) {
         template_params: {
           tipo_sinal: "📊 RELATÓRIO SEMANAL TradeAI",
           ativo: "Carteira Completa",
-          preco: conteudo.resumoPrecos,
-          stop_loss: conteudo.melhores,
-          take_profit: conteudo.piores,
-          confianca: conteudo.scoreGeral,
-          analise: conteudo.analiseCompleta,
+          preco: conteudo.resumoPrecos || conteudo.preco || "—",
+stop_loss: conteudo.melhores || conteudo.stop_loss || "—",
+take_profit: conteudo.piores || conteudo.take_profit || "—",
+confianca: conteudo.scoreGeral || conteudo.confianca || "—",
+analise: conteudo.analiseCompleta || conteudo.analise || "—",
           horario: new Date().toLocaleString("pt-BR"),
         },
       }),
     });
-    return res.ok;
+    return res.ok || res.status === 200;
   } catch { return false; }
 }
 
@@ -449,3 +449,4 @@ Responda em JSON:
     </div>
   );
 }
+
