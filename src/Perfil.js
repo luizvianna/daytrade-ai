@@ -1,6 +1,14 @@
 import { useState, useCallback, useEffect } from "react";
+import { authFetch, supabase } from "./supabaseClient";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
+
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#888", textFaint: "#444" };
+}
 
 const PERGUNTAS = [
   {
@@ -156,7 +164,7 @@ function getPerfil(pontuacao) {
 // ── API calls ao proxy (substitui localStorage) ──────────────
 export async function carregarPerfil() {
   try {
-    const r = await fetch(`${PROXY}/api/perfil`);
+    const r = await authFetch(`${PROXY}/api/perfil`);
     const data = await r.json();
     if (data.success && data.data) {
       const p = data.data;
@@ -181,7 +189,7 @@ export async function carregarPerfil() {
 
 export async function salvarPerfil(perfil) {
   try {
-    await fetch(`${PROXY}/api/perfil`, {
+    await authFetch(`${PROXY}/api/perfil`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -196,30 +204,30 @@ export async function salvarPerfil(perfil) {
   } catch (e) { console.error("Erro ao salvar perfil:", e.message); }
 }
 
-function AlocacaoBar({ categoria, percentual, cor }) {
+function AlocacaoBar({ categoria, percentual, cor, cores }) {
   return (
     <div style={{ marginBottom: "10px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-        <span style={{ color: "#aaa", fontSize: "12px" }}>{categoria}</span>
+        <span style={{ color: cores.textSecondary, fontSize: "12px" }}>{categoria}</span>
         <span style={{ color: cor, fontSize: "12px", fontWeight: "700", fontFamily: "monospace" }}>{percentual}%</span>
       </div>
-      <div style={{ height: "6px", background: "#1e2d45", borderRadius: "3px", overflow: "hidden" }}>
+      <div style={{ height: "6px", background: cores.border, borderRadius: "3px", overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${percentual}%`, background: cor, borderRadius: "3px", transition: "width 0.6s ease" }} />
       </div>
     </div>
   );
 }
 
-function OpcaoButton({ texto, letra, onClick }) {
+function OpcaoButton({ texto, letra, onClick, cores }) {
   const [hover, setHover] = useState(false);
   return (
     <button onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: hover ? "#00e5a011" : "#0d1320",
-        border: `1px solid ${hover ? "#00e5a0" : "#1e2d45"}`,
-        color: hover ? "#fff" : "#ccc",
+        background: hover ? "#00e5a011" : cores.card,
+        border: `1px solid ${hover ? "#00e5a0" : cores.border}`,
+        color: hover ? cores.textPrimary : cores.textSecondary,
         borderRadius: "12px", padding: "16px 18px", fontSize: "14px",
         textAlign: "left", cursor: "pointer", lineHeight: "1.5",
         transition: "background 0.15s, border-color 0.15s, color 0.15s",
@@ -231,7 +239,8 @@ function OpcaoButton({ texto, letra, onClick }) {
   );
 }
 
-export default function Perfil() {
+export default function Perfil({ tema, setTema }) {
+  const cores = paleta(tema);
   const [etapa, setEtapa] = useState("loading");
   const [respostas, setRespostas] = useState({});
   const [perguntaAtual, setPerguntaAtual] = useState(0);
@@ -319,13 +328,13 @@ export default function Perfil() {
       <div style={{ padding: "14px", maxWidth: "700px", margin: "0 auto" }}>
         <div style={{ marginBottom: "16px" }}>
           <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>👤 <span style={{ color: info.cor }}>Meu Perfil</span> de Investidor</h2>
-          <p style={{ color: "#444", fontSize: "12px" }}>Atualizado em {perfilSalvo.criadoEm}</p>
+          <p style={{ color: cores.textFaint, fontSize: "12px" }}>Atualizado em {perfilSalvo.criadoEm}</p>
         </div>
 
         <div style={{ background: `${info.cor}11`, border: `2px solid ${info.cor}44`, borderRadius: "16px", padding: "24px", marginBottom: "16px", textAlign: "center" }}>
           <div style={{ fontSize: "48px", marginBottom: "8px" }}>{info.icone}</div>
           <h3 style={{ color: info.cor, fontSize: "24px", fontWeight: "700", marginBottom: "8px" }}>{perfilSalvo.nome} — {info.nome}</h3>
-          <p style={{ color: "#bbb", fontSize: "13px", lineHeight: "1.7" }}>{info.descricao}</p>
+          <p style={{ color: cores.textSecondary, fontSize: "13px", lineHeight: "1.7" }}>{info.descricao}</p>
           <div style={{ background: `${info.cor}22`, borderRadius: "8px", padding: "8px 16px", marginTop: "12px", display: "inline-block" }}>
             <span style={{ color: info.cor, fontFamily: "monospace", fontSize: "13px" }}>Score: {perfilSalvo.pontuacao}/40 pontos</span>
           </div>
@@ -334,28 +343,28 @@ export default function Perfil() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "16px" }}>
           {[
             { label: "CAPITAL TOTAL", value: `R$ ${parseFloat(perfilSalvo.capital || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, color: info.cor },
-            { label: "APORTE MENSAL", value: `R$ ${parseFloat(perfilSalvo.orcamentoMensal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, color: "#fff" },
+            { label: "APORTE MENSAL", value: `R$ ${parseFloat(perfilSalvo.orcamentoMensal || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, color: cores.textPrimary },
             { label: "TIPO", value: info.nome.toUpperCase(), color: info.cor },
           ].map((s, i) => (
-            <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
-              <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{s.label}</div>
+            <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+              <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{s.label}</div>
               <div style={{ color: s.color, fontSize: "14px", fontWeight: "700" }}>{s.value}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "14px" }}>📊 ALOCAÇÃO SUGERIDA</div>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "14px" }}>📊 ALOCAÇÃO SUGERIDA</div>
           {Object.entries(info.alocacao).map(([cat, pct]) => (
-            <AlocacaoBar key={cat} categoria={cat} percentual={pct} cor={info.cor} />
+            <AlocacaoBar key={cat} categoria={cat} percentual={pct} cor={info.cor} cores={cores} />
           ))}
           {perfilSalvo.capital > 0 && (
-            <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #1e2d45" }}>
-              <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "10px" }}>VALORES EM REAIS</div>
+            <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: `1px solid ${cores.border}` }}>
+              <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "10px" }}>VALORES EM REAIS</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px" }}>
                 {Object.entries(info.alocacao).map(([cat, pct]) => (
-                  <div key={cat} style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-                    <div style={{ color: "#555", fontSize: "10px" }}>{cat}</div>
+                  <div key={cat} style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+                    <div style={{ color: cores.textFaint, fontSize: "10px" }}>{cat}</div>
                     <div style={{ color: info.cor, fontSize: "13px", fontWeight: "700", fontFamily: "monospace" }}>
                       R$ {(perfilSalvo.capital * pct / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </div>
@@ -366,19 +375,78 @@ export default function Perfil() {
           )}
         </div>
 
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>✅ RECOMENDAÇÕES PARA VOCÊ</div>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>✅ RECOMENDAÇÕES PARA VOCÊ</div>
           {info.recomendacoes.map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < info.recomendacoes.length - 1 ? "1px solid #0d1827" : "none" }}>
+            <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < info.recomendacoes.length - 1 ? `1px solid ${cores.border}` : "none" }}>
               <span style={{ color: info.cor }}>•</span>
-              <span style={{ color: "#bbb", fontSize: "13px", lineHeight: "1.6" }}>{r}</span>
+              <span style={{ color: cores.textSecondary, fontSize: "13px", lineHeight: "1.6" }}>{r}</span>
             </div>
           ))}
         </div>
 
         <button onClick={reiniciar}
-          style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#888", borderRadius: "10px", padding: "12px", fontSize: "13px", cursor: "pointer" }}>
+          style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "10px", padding: "12px", fontSize: "13px", cursor: "pointer", marginBottom: "8px" }}>
           🔄 Refazer Questionário
+        </button>
+        <button onClick={() => setEtapa("config")}
+          style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "10px", padding: "12px", fontSize: "13px", cursor: "pointer" }}>
+          ⚙️ Configurações
+        </button>
+      </div>
+    );
+  }
+
+  // Configurações
+  if (etapa === "config") {
+    return (
+      <div style={{ padding: "14px", maxWidth: "600px", margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+          <button onClick={() => setEtapa("ver")} style={{ background: "none", border: "none", color: cores.textSecondary, cursor: "pointer", fontSize: "18px" }}>←</button>
+          <h2 style={{ fontSize: "20px", fontWeight: "700" }}>⚙️ Configurações</h2>
+        </div>
+
+        {/* Tema */}
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>APARÊNCIA</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <button onClick={() => setTema && setTema("escuro")}
+              style={{ background: tema === "escuro" ? "#00e5a022" : cores.cardInner, border: `1px solid ${tema === "escuro" ? "#00e5a0" : cores.border}`, color: tema === "escuro" ? "#00e5a0" : cores.textSecondary, borderRadius: "10px", padding: "16px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
+              🌙 Escuro
+            </button>
+            <button onClick={() => setTema && setTema("claro")}
+              style={{ background: tema === "claro" ? "#00e5a022" : cores.cardInner, border: `1px solid ${tema === "claro" ? "#00e5a0" : cores.border}`, color: tema === "claro" ? "#00e5a0" : cores.textSecondary, borderRadius: "10px", padding: "16px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
+              ☀️ Claro
+            </button>
+          </div>
+          <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "10px", lineHeight: "1.5" }}>
+            Por enquanto o tema claro afeta apenas o fundo geral do app — as telas internas ainda estão sendo adaptadas.
+          </div>
+        </div>
+
+        {/* Termos e segurança */}
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>TERMOS E SEGURANÇA</div>
+          <div style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.8" }}>
+            <p style={{ marginBottom: "10px" }}>
+              <strong style={{ color: cores.textPrimary }}>⚠️ Análises geradas por IA</strong> podem conter erros e não constituem recomendação de investimento personalizada. Consulte um profissional certificado antes de investir.
+            </p>
+            <p style={{ marginBottom: "10px" }}>
+              <strong style={{ color: cores.textPrimary }}>📉 Investimentos envolvem risco</strong>, incluindo a possibilidade de perda do capital investido. Rentabilidade passada não garante rentabilidade futura.
+            </p>
+            <p style={{ marginBottom: "10px" }}>
+              <strong style={{ color: cores.textPrimary }}>🔒 Segurança dos dados:</strong> sua conta usa autenticação criptografada, conexão HTTPS em todas as telas, e seus dados ficam isolados por usuário no banco (Row Level Security).
+            </p>
+            <p style={{ marginBottom: 0 }}>
+              <strong style={{ color: cores.textPrimary }}>💰 Ordens enviadas</strong> ficam pendentes até confirmação de execução via corretora parceira — nenhuma ordem é executada automaticamente sem essa confirmação.
+            </p>
+          </div>
+        </div>
+
+        {/* Sair da conta */}
+        <button onClick={() => supabase.auth.signOut()}
+          style={{ width: "100%", background: "#ff4d6d15", border: "1px solid #ff4d6d33", color: "#ff4d6d", borderRadius: "10px", padding: "13px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
+          🔒 Sair da conta
         </button>
       </div>
     );
@@ -391,7 +459,7 @@ export default function Perfil() {
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div style={{ fontSize: "56px", marginBottom: "12px" }}>🧠</div>
           <h2 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "8px" }}>Análise de Perfil de Investidor</h2>
-          <p style={{ color: "#666", fontSize: "13px", lineHeight: "1.7" }}>Responda 10 perguntas rápidas e a IA vai montar a estratégia de investimento ideal para você.</p>
+          <p style={{ color: cores.textSecondary, fontSize: "13px", lineHeight: "1.7" }}>Responda 10 perguntas rápidas e a IA vai montar a estratégia de investimento ideal para você.</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
@@ -401,31 +469,31 @@ export default function Perfil() {
             { icone: "📊", titulo: "Alocação", desc: "personalizada" },
             { icone: "🤖", titulo: "IA ajusta", desc: "todas as análises" },
           ].map((item, i) => (
-            <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "14px", textAlign: "center" }}>
+            <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "14px", textAlign: "center" }}>
               <div style={{ fontSize: "24px", marginBottom: "4px" }}>{item.icone}</div>
-              <div style={{ color: "#fff", fontWeight: "700", fontSize: "13px" }}>{item.titulo}</div>
-              <div style={{ color: "#555", fontSize: "11px" }}>{item.desc}</div>
+              <div style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "13px" }}>{item.titulo}</div>
+              <div style={{ color: cores.textFaint, fontSize: "11px" }}>{item.desc}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "18px", marginBottom: "16px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>ANTES DE COMEÇAR</div>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "16px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>ANTES DE COMEÇAR</div>
           <div style={{ marginBottom: "10px" }}>
-            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Seu nome (opcional)</label>
+            <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Seu nome (opcional)</label>
             <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Luiz"
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
             <div>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Capital disponível (R$)</label>
+              <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Capital disponível (R$)</label>
               <input type="number" value={capital} onChange={e => setCapital(e.target.value)} placeholder="Ex: 10000"
-                style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
+                style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
             </div>
             <div>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Aporte mensal (R$)</label>
+              <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Aporte mensal (R$)</label>
               <input type="number" value={orcamentoMensal} onChange={e => setOrcamentoMensal(e.target.value)} placeholder="Ex: 500"
-                style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
+                style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
             </div>
           </div>
         </div>
@@ -445,28 +513,28 @@ export default function Perfil() {
       <div style={{ padding: "14px", maxWidth: "600px", margin: "0 auto" }}>
         <div style={{ marginBottom: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ color: "#444", fontSize: "12px" }}>{pergunta.categoria}</span>
-            <span style={{ color: "#444", fontSize: "12px", fontFamily: "monospace" }}>{perguntaAtual + 1}/{PERGUNTAS.length}</span>
+            <span style={{ color: cores.textFaint, fontSize: "12px" }}>{pergunta.categoria}</span>
+            <span style={{ color: cores.textFaint, fontSize: "12px", fontFamily: "monospace" }}>{perguntaAtual + 1}/{PERGUNTAS.length}</span>
           </div>
-          <div style={{ height: "4px", background: "#1e2d45", borderRadius: "2px", overflow: "hidden" }}>
+          <div style={{ height: "4px", background: cores.border, borderRadius: "2px", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${progresso}%`, background: "linear-gradient(90deg,#00e5a0,#006eff)", borderRadius: "2px", transition: "width 0.3s" }} />
           </div>
         </div>
 
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div style={{ fontSize: "44px", marginBottom: "12px" }}>{pergunta.icone}</div>
-          <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#fff", lineHeight: "1.4" }}>{pergunta.pergunta}</h3>
+          <h3 style={{ fontSize: "18px", fontWeight: "700", color: cores.textPrimary, lineHeight: "1.4" }}>{pergunta.pergunta}</h3>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {pergunta.opcoes.map((opcao, i) => (
-            <OpcaoButton key={i} texto={opcao.texto} letra={String.fromCharCode(65 + i)} onClick={() => responder(opcao.pontos)} />
+            <OpcaoButton key={i} texto={opcao.texto} letra={String.fromCharCode(65 + i)} onClick={() => responder(opcao.pontos)} cores={cores} />
           ))}
         </div>
 
         {perguntaAtual > 0 && (
           <button onClick={() => setPerguntaAtual(prev => prev - 1)}
-            style={{ marginTop: "14px", background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: "13px" }}>
+            style={{ marginTop: "14px", background: "none", border: "none", color: cores.textFaint, cursor: "pointer", fontSize: "13px" }}>
             ← Voltar
           </button>
         )}
@@ -485,26 +553,26 @@ export default function Perfil() {
           <h2 style={{ color: info.cor, fontSize: "26px", fontWeight: "700", marginBottom: "8px" }}>
             {resultado.nome ? `${resultado.nome}, você é` : "Você é"} {info.nome}!
           </h2>
-          <p style={{ color: "#bbb", fontSize: "13px", lineHeight: "1.7", marginBottom: "12px" }}>{info.descricao}</p>
+          <p style={{ color: cores.textSecondary, fontSize: "13px", lineHeight: "1.7", marginBottom: "12px" }}>{info.descricao}</p>
           <div style={{ display: "inline-flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
             <span style={{ background: `${info.cor}22`, color: info.cor, borderRadius: "8px", padding: "4px 12px", fontSize: "12px", fontFamily: "monospace" }}>Score: {resultado.pontuacao}/40</span>
-            {resultado.capital > 0 && <span style={{ background: "#111a27", color: "#aaa", borderRadius: "8px", padding: "4px 12px", fontSize: "12px", fontFamily: "monospace" }}>Capital: R${parseFloat(resultado.capital).toLocaleString("pt-BR")}</span>}
+            {resultado.capital > 0 && <span style={{ background: cores.cardInner, color: cores.textSecondary, borderRadius: "8px", padding: "4px 12px", fontSize: "12px", fontFamily: "monospace" }}>Capital: R${parseFloat(resultado.capital).toLocaleString("pt-BR")}</span>}
           </div>
         </div>
 
         {resultado.capital > 0 && (
-          <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
-            <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "14px" }}>💼 ALOCAÇÃO SUGERIDA PARA VOCÊ</div>
+          <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "14px" }}>💼 ALOCAÇÃO SUGERIDA PARA VOCÊ</div>
             {resultado.alocacaoSugerida.map(item => (
               <div key={item.categoria} style={{ marginBottom: "12px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ color: "#aaa", fontSize: "12px" }}>{item.categoria}</span>
+                  <span style={{ color: cores.textSecondary, fontSize: "12px" }}>{item.categoria}</span>
                   <div style={{ textAlign: "right" }}>
                     <span style={{ color: info.cor, fontSize: "12px", fontWeight: "700", fontFamily: "monospace", marginRight: "8px" }}>{item.percentual}%</span>
-                    <span style={{ color: "#555", fontSize: "11px", fontFamily: "monospace" }}>R$ {parseFloat(item.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    <span style={{ color: cores.textFaint, fontSize: "11px", fontFamily: "monospace" }}>R$ {parseFloat(item.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
-                <div style={{ height: "6px", background: "#1e2d45", borderRadius: "3px", overflow: "hidden" }}>
+                <div style={{ height: "6px", background: cores.border, borderRadius: "3px", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${item.percentual}%`, background: info.cor, borderRadius: "3px" }} />
                 </div>
               </div>
@@ -512,19 +580,19 @@ export default function Perfil() {
           </div>
         )}
 
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>✅ RECOMENDAÇÕES PERSONALIZADAS</div>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>✅ RECOMENDAÇÕES PERSONALIZADAS</div>
           {info.recomendacoes.map((r, i) => (
-            <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < info.recomendacoes.length - 1 ? "1px solid #0d1827" : "none" }}>
+            <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < info.recomendacoes.length - 1 ? `1px solid ${cores.border}` : "none" }}>
               <span style={{ color: info.cor }}>•</span>
-              <span style={{ color: "#bbb", fontSize: "13px", lineHeight: "1.6" }}>{r}</span>
+              <span style={{ color: cores.textSecondary, fontSize: "13px", lineHeight: "1.6" }}>{r}</span>
             </div>
           ))}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <button onClick={reiniciar}
-            style={{ background: "#111a27", border: "1px solid #1e2d45", color: "#888", borderRadius: "10px", padding: "13px", fontSize: "13px", cursor: "pointer" }}>
+            style={{ background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "10px", padding: "13px", fontSize: "13px", cursor: "pointer" }}>
             🔄 Refazer
           </button>
           <button onClick={salvar} disabled={salvando}

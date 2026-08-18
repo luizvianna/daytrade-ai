@@ -13,6 +13,7 @@ import Home from "./Home";
 import Investimentos from "./Investimentos";
 import Sidebar, { MENU_ITEMS } from "./Sidebar";
 import ConfigNotificacoes, { useNotificacoes, registrarSW } from "./Notificacoes";
+import { supabase } from "./supabaseClient";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -22,16 +23,6 @@ const keepProxyAwake = () => {
   setInterval(ping, 10 * 60 * 1000);
 };
 
-function checkSession() {
-  try {
-    const stored = sessionStorage.getItem("tradeai_auth");
-    if (!stored) return false;
-    const { expiry } = JSON.parse(stored);
-    if (Date.now() > expiry) { sessionStorage.removeItem("tradeai_auth"); return false; }
-    return true;
-  } catch { return false; }
-}
-
 function getPageInfo(pageId) {
   for (const section of MENU_ITEMS) {
     const found = section.items.find(i => i.id === pageId);
@@ -40,32 +31,62 @@ function getPageInfo(pageId) {
   return { label: "TradeAI", icon: "⚡" };
 }
 
-function PageContent({ page, setPage }) {
+function PageContent({ page, setPage, isAdmin, tema, setTema }) {
   switch (page) {
-    case "home":         return <Home setPage={setPage} />;
-    case "dashboard":    return <Dashboard />;
-    case "investimentos":return <Investimentos setPage={setPage} />;
-    case "chat":         return <Chat />;
-    case "score":        return <Score />;
-    case "historico":    return <Historico />;
-    case "alertas":      return <Alertas />;
-    case "relatorio":    return <Relatorio />;
-    case "backtesting":  return <Backtesting />;
-    case "papertrading": return <PaperTrading />;
-    case "perfil":       return <Perfil />;
+    case "home":         return <Home setPage={setPage} tema={tema} />;
+    case "dashboard":    return <Dashboard tema={tema} />;
+    case "investimentos":return <Investimentos setPage={setPage} tema={tema} />;
+    case "chat":         return <Chat tema={tema} />;
+    case "score":        return <Score tema={tema} />;
+    case "historico":    return <Historico tema={tema} />;
+    case "alertas":      return <Alertas tema={tema} />;
+    case "relatorio":    return <Relatorio tema={tema} />;
+    case "backtesting":  return <Backtesting tema={tema} />;
+    case "papertrading": return <PaperTrading tema={tema} />;
+    case "perfil":       return <Perfil tema={tema} setTema={setTema} />;
     default:             return <Home setPage={setPage} />;
   }
 }
 
 export default function App() {
-  const [autenticado, setAutenticado] = useState(checkSession);
+  const [autenticado, setAutenticado] = useState(null); // null = ainda checando
   const [page, setPage] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [proxyOk, setProxyOk] = useState(null);
   const [proxyWaking, setProxyWaking] = useState(false);
   const [showNotifConfig, setShowNotifConfig] = useState(false);
+  const [tema, setTema] = useState(() => localStorage.getItem("tradeai_tema") || "escuro");
   const isMobile = useIsMobile();
   const { permissao } = useNotificacoes();
+
+  useEffect(() => {
+    localStorage.setItem("tradeai_tema", tema);
+  }, [tema]);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const buscarIsAdmin = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) { setIsAdmin(false); return; }
+    const { data } = await supabase
+      .from("usuarios")
+      .select("is_admin")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    setIsAdmin(!!data?.is_admin);
+  };
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setAutenticado(!!data.session);
+      if (data.session) buscarIsAdmin();
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAutenticado(!!session);
+      if (session) buscarIsAdmin(); else setIsAdmin(false);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!autenticado) return;
@@ -82,18 +103,21 @@ export default function App() {
     return () => clearInterval(i);
   }, [autenticado]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("tradeai_auth");
-    setAutenticado(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
+  if (autenticado === null) return null; // ainda checando a sessão, não mostra nada
   if (!autenticado) return <Login onLogin={() => setAutenticado(true)} />;
 
   const pageInfo = getPageInfo(page);
-  const notifColor = permissao === "granted" ? "#00e5a0" : permissao === "denied" ? "#ff4d6d" : "#ffd60a";
+
+  const CORES_TEMA = tema === "claro"
+    ? { bg: "#F4F7FA", text: "#172033" }
+    : { bg: "#070B14", text: "#e0e6f0" };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080c14", fontFamily: "'DM Sans','Segoe UI',sans-serif", color: "#e0e6f0" }}>
+    <div style={{ minHeight: "100vh", background: CORES_TEMA.bg, fontFamily: "'DM Sans','Segoe UI',sans-serif", color: CORES_TEMA.text }}>
 
 
       <Sidebar
@@ -102,6 +126,8 @@ export default function App() {
         page={page}
         setPage={setPage}
         onLogout={handleLogout}
+        isAdmin={isAdmin}
+        tema={tema}
       />
 
       {showNotifConfig && (
@@ -109,21 +135,21 @@ export default function App() {
           style={{ position: "fixed", inset: 0, background: "#000000aa", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
           onClick={e => e.target === e.currentTarget && setShowNotifConfig(false)}
         >
-          <ConfigNotificacoes onClose={() => setShowNotifConfig(false)} />
+          <ConfigNotificacoes onClose={() => setShowNotifConfig(false)} tema={tema} />
         </div>
       )}
 
       {/* ── Header ── */}
-      <div style={{ background: "#0a0f1a", borderBottom: "1px solid #1e2d45", padding: isMobile ? "12px 14px" : "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+      <div style={{ background: tema === "claro" ? "#FFFFFF" : "#0a0f1a", borderBottom: `1px solid ${tema === "claro" ? "#E2E8F0" : "#1e2d45"}`, padding: isMobile ? "12px 14px" : "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {/* Hambúrguer */}
           <button
             onClick={() => setSidebarOpen(true)}
-            style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "9px", width: "38px", height: "38px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", padding: 0 }}
+            style={{ background: tema === "claro" ? "#F4F7FA" : "#0d1320", border: `1px solid ${tema === "claro" ? "#E2E8F0" : "#1e2d45"}`, borderRadius: "9px", width: "38px", height: "38px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px", padding: 0 }}
           >
-            <span style={{ display: "block", width: "16px", height: "2px", background: "#aaa", borderRadius: "1px" }} />
-            <span style={{ display: "block", width: "16px", height: "2px", background: "#aaa", borderRadius: "1px" }} />
-            <span style={{ display: "block", width: "16px", height: "2px", background: "#aaa", borderRadius: "1px" }} />
+            <span style={{ display: "block", width: "16px", height: "2px", background: tema === "claro" ? "#64748B" : "#aaa", borderRadius: "1px" }} />
+            <span style={{ display: "block", width: "16px", height: "2px", background: tema === "claro" ? "#64748B" : "#aaa", borderRadius: "1px" }} />
+            <span style={{ display: "block", width: "16px", height: "2px", background: tema === "claro" ? "#64748B" : "#aaa", borderRadius: "1px" }} />
           </button>
 
           {/* Logo / título da página */}
@@ -142,14 +168,7 @@ export default function App() {
 
         {/* Direita do header */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <button
-            onClick={() => setShowNotifConfig(true)}
-            style={{ background: `${notifColor}15`, border: `1px solid ${notifColor}33`, color: notifColor, borderRadius: "8px", padding: "7px 9px", fontSize: "14px" }}
-          >
-            {permissao === "granted" ? "🔔" : "🔕"}
-          </button>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "5px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "8px", padding: "7px 10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px", background: tema === "claro" ? "#F4F7FA" : "#0d1320", border: `1px solid ${tema === "claro" ? "#E2E8F0" : "#1e2d45"}`, borderRadius: "8px", padding: "7px 10px" }}>
             <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: proxyOk === null ? "#555" : proxyOk ? "#00e5a0" : "#ffd60a" }} className={proxyWaking ? "pulse" : ""} />
             {!isMobile && (
               <span style={{ color: proxyOk ? "#00e5a0" : "#ffd60a", fontSize: "10px", fontFamily: "monospace" }}>
@@ -157,13 +176,6 @@ export default function App() {
               </span>
             )}
           </div>
-
-          <button
-            onClick={handleLogout}
-            style={{ background: "#ff4d6d15", border: "1px solid #ff4d6d33", color: "#ff4d6d", borderRadius: "8px", padding: "7px 10px", fontSize: "12px", fontWeight: "700" }}
-          >
-            🔒
-          </button>
         </div>
       </div>
 
@@ -188,7 +200,7 @@ export default function App() {
       )}
 
       {/* ── Conteúdo da página ── */}
-      <PageContent key={page} page={page} setPage={setPage} />
+      <PageContent key={page} page={page} setPage={setPage} isAdmin={isAdmin} tema={tema} setTema={setTema} />
     </div>
   );
 }

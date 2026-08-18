@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export const MENU_ITEMS = [
   { section: "PRINCIPAL", items: [
     { id: "home", label: "Home", icon: "🏠" },
-    { id: "dashboard", label: "Bolsa (Daytrade)", icon: "📈" },
+    { id: "dashboard", label: "Negociar", icon: "📈" },
     { id: "investimentos", label: "Investimentos", icon: "💼" },
   ]},
   { section: "INTELIGÊNCIA ARTIFICIAL", items: [
@@ -20,12 +20,23 @@ export const MENU_ITEMS = [
   ]},
 ];
 
-export default function Sidebar({ open, onClose, page, setPage, onLogout }) {
+// Itens visíveis só pra quem é admin (day trade / paper trading)
+const ITENS_ADMIN_APENAS = ["dashboard", "papertrading"];
+
+export default function Sidebar({ open, onClose, page, setPage, onLogout, isAdmin, tema = "escuro" }) {
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  const cores = tema === "claro"
+    ? { bg: "#FFFFFF", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", itemBg: "#F4F7FA" }
+    : { bg: "#0a0f1a", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#999", itemBg: "#111a27" };
+
+  // Remove os itens admin-only do menu quando isAdmin não é true,
+  // e some com a seção inteira se ela ficar vazia
+  const menuFiltrado = MENU_ITEMS;
 
   return (
     <>
@@ -43,32 +54,32 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout }) {
       {/* Painel lateral */}
       <div style={{
         position: "fixed", top: 0, left: 0, height: "100vh", width: "280px", maxWidth: "82vw",
-        background: "#0a0f1a", borderRight: "1px solid #1e2d45", zIndex: 999,
+        background: cores.bg, borderRight: `1px solid ${cores.border}`, zIndex: 999,
         transform: open ? "translateX(0)" : "translateX(-100%)",
         transition: "transform 0.28s cubic-bezier(.4,0,.2,1)",
         display: "flex", flexDirection: "column",
         boxShadow: open ? "8px 0 40px rgba(0,0,0,0.5)" : "none",
       }}>
         {/* Header do menu */}
-        <div style={{ padding: "20px 18px", borderBottom: "1px solid #1e2d45", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "20px 18px", borderBottom: `1px solid ${cores.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ width: "32px", height: "32px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>⚡</div>
             <div>
-              <div style={{ fontWeight: "700", fontSize: "15px", color: "#fff" }}>TRADE<span style={{ color: "#00e5a0" }}>AI</span></div>
-              <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>MENU PRINCIPAL</div>
+              <div style={{ fontWeight: "700", fontSize: "15px", color: cores.textPrimary }}>TRADE<span style={{ color: "#00e5a0" }}>AI</span></div>
+              <div style={{ color: cores.textSecondary, fontSize: "9px", fontFamily: "monospace" }}>MENU PRINCIPAL</div>
             </div>
           </div>
           <button onClick={onClose}
-            style={{ background: "#111a27", border: "1px solid #1e2d45", color: "#666", borderRadius: "8px", width: "32px", height: "32px", fontSize: "16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            style={{ background: cores.itemBg, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "8px", width: "32px", height: "32px", fontSize: "16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             ×
           </button>
         </div>
 
         {/* Itens do menu */}
         <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
-          {MENU_ITEMS.map(section => (
+          {menuFiltrado.map(section => (
             <div key={section.section} style={{ marginBottom: "18px" }}>
-              <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.12em", padding: "0 10px", marginBottom: "8px" }}>
+              <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.12em", padding: "0 10px", marginBottom: "8px" }}>
                 {section.section}
               </div>
               {section.items.map(item => {
@@ -79,7 +90,7 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout }) {
                       width: "100%", display: "flex", alignItems: "center", gap: "12px",
                       background: ativo ? "#00e5a015" : "transparent",
                       border: ativo ? "1px solid #00e5a033" : "1px solid transparent",
-                      color: ativo ? "#00e5a0" : "#999",
+                      color: ativo ? "#00e5a0" : cores.textSecondary,
                       borderRadius: "10px", padding: "11px 12px", marginBottom: "3px",
                       fontSize: "14px", fontWeight: ativo ? "700" : "500", cursor: "pointer",
                       fontFamily: "inherit", textAlign: "left", transition: "all 0.15s",
@@ -94,12 +105,12 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "14px 16px", borderTop: "1px solid #1e2d45" }}>
+        <div style={{ padding: "14px 16px", borderTop: `1px solid ${cores.border}` }}>
           <button onClick={onLogout}
             style={{ width: "100%", background: "#ff4d6d15", border: "1px solid #ff4d6d33", color: "#ff4d6d", borderRadius: "10px", padding: "11px", fontSize: "13px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             🔒 Sair da conta
           </button>
-          <div style={{ color: "#2a2a2a", fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginTop: "10px" }}>
+          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginTop: "10px" }}>
             v2.0 · Dados: Brapi ⚡
           </div>
         </div>

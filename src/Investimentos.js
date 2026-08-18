@@ -1,6 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { carregarPerfil } from "./Perfil";
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#888", textFaint: "#444" };
+}
+
 // Taxas de referência atualizadas (junho/2026) — via busca web
 // Selic: 14,50% a.a. | CDI: 14,40% a.a. | IPCA: 4,39% a.a.
 const TAXAS_REFERENCIA = {
@@ -104,23 +111,23 @@ function fmtMoney(v) {
 }
 
 // ── Card de alocação por categoria ────────────────────────────────
-function AlocacaoCard({ categoria, percentual, valor, cor }) {
+function AlocacaoCard({ categoria, percentual, valor, cor, cores }) {
   return (
-    <div style={{ background: "#111a27", borderRadius: "10px", padding: "12px 14px", marginBottom: "8px" }}>
+    <div style={{ background: cores.cardInner, borderRadius: "10px", padding: "12px 14px", marginBottom: "8px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-        <span style={{ color: "#ccc", fontSize: "13px", fontWeight: "600" }}>{categoria}</span>
+        <span style={{ color: cores.textSecondary, fontSize: "13px", fontWeight: "600" }}>{categoria}</span>
         <span style={{ color: cor, fontSize: "13px", fontWeight: "700", fontFamily: "monospace" }}>{percentual}%</span>
       </div>
-      <div style={{ height: "6px", background: "#1e2d45", borderRadius: "3px", overflow: "hidden", marginBottom: "6px" }}>
+      <div style={{ height: "6px", background: cores.border, borderRadius: "3px", overflow: "hidden", marginBottom: "6px" }}>
         <div style={{ height: "100%", width: `${percentual}%`, background: cor, borderRadius: "3px" }} />
       </div>
-      <div style={{ color: "#555", fontSize: "12px", fontFamily: "monospace" }}>{fmtMoney(valor)}</div>
+      <div style={{ color: cores.textFaint, fontSize: "12px", fontFamily: "monospace" }}>{fmtMoney(valor)}</div>
     </div>
   );
 }
 
 // ── Card de produto de renda fixa ─────────────────────────────────
-function ProdutoCard({ produto, onSimular }) {
+function ProdutoCard({ produto, onSimular, cores }) {
   const taxaLabel = {
     pos: `${produto.taxaBase.toFixed(2)}% a.a. (100% da Selic)`,
     ipca: `IPCA + ${(produto.taxaBase - TAXAS_REFERENCIA.ipca).toFixed(2)}% a.a.`,
@@ -129,13 +136,13 @@ function ProdutoCard({ produto, onSimular }) {
   }[produto.tipoTaxa];
 
   return (
-    <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "14px", padding: "16px", marginBottom: "10px" }}>
+    <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "10px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ fontSize: "24px" }}>{produto.icone}</span>
           <div>
-            <div style={{ color: "#fff", fontWeight: "700", fontSize: "14px" }}>{produto.nome}</div>
-            <div style={{ color: "#555", fontSize: "11px" }}>{produto.categoria}</div>
+            <div style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "14px" }}>{produto.nome}</div>
+            <div style={{ color: cores.textFaint, fontSize: "11px" }}>{produto.categoria}</div>
           </div>
         </div>
         {!produto.ir && (
@@ -143,20 +150,20 @@ function ProdutoCard({ produto, onSimular }) {
         )}
       </div>
 
-      <p style={{ color: "#999", fontSize: "12px", lineHeight: "1.6", marginBottom: "12px" }}>{produto.descricao}</p>
+      <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.6", marginBottom: "12px" }}>{produto.descricao}</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
-        <div style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>TAXA</div>
+        <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>TAXA</div>
           <div style={{ color: "#00e5a0", fontSize: "12px", fontWeight: "700" }}>{taxaLabel}</div>
         </div>
-        <div style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>RISCO</div>
-          <div style={{ color: "#ccc", fontSize: "12px" }}>{produto.risco}</div>
+        <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>RISCO</div>
+          <div style={{ color: cores.textSecondary, fontSize: "12px" }}>{produto.risco}</div>
         </div>
-        <div style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>LIQUIDEZ</div>
-          <div style={{ color: "#ccc", fontSize: "12px" }}>{produto.liquidez}</div>
+        <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>LIQUIDEZ</div>
+          <div style={{ color: cores.textSecondary, fontSize: "12px" }}>{produto.liquidez}</div>
         </div>
       </div>
 
@@ -169,7 +176,7 @@ function ProdutoCard({ produto, onSimular }) {
 }
 
 // ── Modal de simulação ─────────────────────────────────────────────
-function SimuladorModal({ produto, onClose }) {
+function SimuladorModal({ produto, onClose, cores }) {
   const [valor, setValor] = useState("1000");
   const [meses, setMeses] = useState("12");
 
@@ -183,57 +190,57 @@ function SimuladorModal({ produto, onClose }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "#000000aa", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "16px", padding: "22px", maxWidth: "420px", width: "100%", maxHeight: "85vh", overflowY: "auto" }}>
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "16px", padding: "22px", maxWidth: "420px", width: "100%", maxHeight: "85vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
+          <h3 style={{ fontSize: "15px", fontWeight: "700", color: cores.textPrimary, display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "20px" }}>{produto.icone}</span> {produto.nome}
           </h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: "20px" }}>×</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: cores.textFaint, cursor: "pointer", fontSize: "20px" }}>×</button>
         </div>
 
         <div style={{ marginBottom: "14px" }}>
-          <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Valor a investir (R$)</label>
+          <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Valor a investir (R$)</label>
           <input type="number" value={valor} onChange={e => setValor(e.target.value)}
-            style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "12px 14px", fontSize: "16px", fontFamily: "monospace" }} />
+            style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "12px 14px", fontSize: "16px", fontFamily: "monospace" }} />
         </div>
 
         <div style={{ marginBottom: "16px" }}>
-          <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Prazo (meses)</label>
+          <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Prazo (meses)</label>
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
             {[6, 12, 24, 36, 60, 120].map(m => (
               <button key={m} onClick={() => setMeses(String(m))}
-                style={{ background: meses === String(m) ? "#00e5a022" : "#111a27", border: `1px solid ${meses === String(m) ? "#00e5a0" : "#1e2d45"}`, color: meses === String(m) ? "#00e5a0" : "#888", borderRadius: "8px", padding: "6px 12px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
+                style={{ background: meses === String(m) ? "#00e5a022" : cores.cardInner, border: `1px solid ${meses === String(m) ? "#00e5a0" : cores.border}`, color: meses === String(m) ? "#00e5a0" : cores.textSecondary, borderRadius: "8px", padding: "6px 12px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
                 {m < 12 ? `${m}m` : `${m / 12}a`}
               </button>
             ))}
           </div>
           <input type="number" value={meses} onChange={e => setMeses(e.target.value)} placeholder="Ou digite os meses..."
-            style={{ width: "100%", marginTop: "8px", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "13px", fontFamily: "monospace" }} />
+            style={{ width: "100%", marginTop: "8px", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px 14px", fontSize: "13px", fontFamily: "monospace" }} />
         </div>
 
         {/* Resultado */}
         <div style={{ background: "#00e5a011", border: "1px solid #00e5a033", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>VALOR FINAL (LÍQUIDO)</div>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>VALOR FINAL (LÍQUIDO)</div>
           <div style={{ color: "#00e5a0", fontSize: "26px", fontWeight: "700", fontFamily: "monospace", marginBottom: "4px" }}>{fmtMoney(resultado.liquido)}</div>
-          <div style={{ color: "#888", fontSize: "12px" }}>
+          <div style={{ color: cores.textSecondary, fontSize: "12px" }}>
             Rendimento: <span style={{ color: "#00e5a0" }}>+{fmtMoney(rendimentoLiquido)}</span> ({rentabilidadePct.toFixed(2)}% no período)
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
-          <div style={{ background: "#111a27", borderRadius: "8px", padding: "10px 12px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>VALOR BRUTO</div>
-            <div style={{ color: "#ccc", fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>{fmtMoney(resultado.bruto)}</div>
+          <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "10px 12px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>VALOR BRUTO</div>
+            <div style={{ color: cores.textSecondary, fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>{fmtMoney(resultado.bruto)}</div>
           </div>
-          <div style={{ background: "#111a27", borderRadius: "8px", padding: "10px 12px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>IR ({resultado.aliquotaIR}%)</div>
+          <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "10px 12px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>IR ({resultado.aliquotaIR}%)</div>
             <div style={{ color: resultado.ir > 0 ? "#ff4d6d" : "#00e5a0", fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>
               {resultado.ir > 0 ? `-${fmtMoney(resultado.ir)}` : "Isento"}
             </div>
           </div>
         </div>
 
-        <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", textAlign: "center" }}>
+        <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", textAlign: "center" }}>
           Taxas de referência atualizadas em {TAXAS_REFERENCIA.atualizadoEm} · Simulação aproximada, sujeita a variação de mercado
         </div>
       </div>
@@ -241,7 +248,8 @@ function SimuladorModal({ produto, onClose }) {
   );
 }
 
-export default function Investimentos({ setPage }) {
+export default function Investimentos({ setPage, tema }) {
+  const cores = paleta(tema);
   const [perfil, setPerfil] = useState(null);
   const [simulando, setSimulando] = useState(null);
   const [filtroCategoria, setFiltroCategoria] = useState("Todos");
@@ -270,7 +278,7 @@ export default function Investimentos({ setPage }) {
       <div style={{ padding: "14px", maxWidth: "600px", margin: "0 auto", textAlign: "center" }}>
         <div style={{ fontSize: "56px", marginTop: "30px", marginBottom: "16px" }}>🧠</div>
         <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "10px" }}>Defina seu perfil primeiro</h2>
-        <p style={{ color: "#666", fontSize: "13px", lineHeight: "1.7", marginBottom: "20px" }}>
+        <p style={{ color: cores.textSecondary, fontSize: "13px", lineHeight: "1.7", marginBottom: "20px" }}>
           Para receber uma alocação personalizada de investimentos, complete o questionário de perfil de investidor.
         </p>
         <button onClick={() => setPage("perfil")}
@@ -283,12 +291,12 @@ export default function Investimentos({ setPage }) {
 
   return (
     <div style={{ padding: "14px", maxWidth: "700px", margin: "0 auto" }}>
-      {simulando && <SimuladorModal produto={simulando} onClose={() => setSimulando(null)} />}
+      {simulando && <SimuladorModal produto={simulando} onClose={() => setSimulando(null)} cores={cores} />}
 
       {/* Header */}
       <div style={{ marginBottom: "16px" }}>
         <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>💼 <span style={{ color: "#00e5a0" }}>Investimentos</span></h2>
-        <p style={{ color: "#444", fontSize: "12px" }}>Renda Fixa, Tesouro Direto e alocação personalizada</p>
+        <p style={{ color: cores.textFaint, fontSize: "12px" }}>Renda Fixa, Tesouro Direto e alocação personalizada</p>
       </div>
 
       {/* Taxas de referência */}
@@ -298,13 +306,13 @@ export default function Investimentos({ setPage }) {
           { label: "CDI", value: `${TAXAS_REFERENCIA.cdi.toFixed(2)}%`, color: "#6af" },
           { label: "IPCA (12m)", value: `${TAXAS_REFERENCIA.ipca.toFixed(2)}%`, color: "#ffd60a" },
         ].map((t, i) => (
-          <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "10px", textAlign: "center" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{t.label}</div>
+          <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "10px", textAlign: "center" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{t.label}</div>
             <div style={{ color: t.color, fontSize: "16px", fontWeight: "700", fontFamily: "monospace" }}>{t.value}</div>
           </div>
         ))}
       </div>
-      <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginBottom: "16px" }}>
+      <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginBottom: "16px" }}>
         Taxas atualizadas em {TAXAS_REFERENCIA.atualizadoEm}
       </div>
 
@@ -314,47 +322,47 @@ export default function Investimentos({ setPage }) {
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
             <span style={{ fontSize: "26px" }}>{perfilInfo.icone}</span>
             <div>
-              <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace" }}>ALOCAÇÃO PARA SEU PERFIL</div>
+              <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace" }}>ALOCAÇÃO PARA SEU PERFIL</div>
               <div style={{ color: perfilInfo.cor, fontWeight: "700", fontSize: "16px" }}>{perfilInfo.nome}</div>
             </div>
           </div>
 
           {Object.entries(alocacao).map(([cat, pct]) => (
-            <AlocacaoCard key={cat} categoria={cat} percentual={pct} valor={capital * pct / 100} cor={perfilInfo.cor} />
+            <AlocacaoCard key={cat} categoria={cat} percentual={pct} valor={capital * pct / 100} cor={perfilInfo.cor} cores={cores} />
           ))}
 
           <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${perfilInfo.cor}22`, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#888", fontSize: "12px" }}>Capital total considerado</span>
-            <span style={{ color: "#fff", fontSize: "13px", fontWeight: "700", fontFamily: "monospace" }}>{fmtMoney(capital)}</span>
+            <span style={{ color: cores.textSecondary, fontSize: "12px" }}>Capital total considerado</span>
+            <span style={{ color: cores.textPrimary, fontSize: "13px", fontWeight: "700", fontFamily: "monospace" }}>{fmtMoney(capital)}</span>
           </div>
 
           <button onClick={() => setPage("perfil")}
-            style={{ width: "100%", marginTop: "12px", background: "#111a27", border: "1px solid #1e2d45", color: "#888", borderRadius: "8px", padding: "10px", fontSize: "12px", cursor: "pointer" }}>
+            style={{ width: "100%", marginTop: "12px", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "8px", padding: "10px", fontSize: "12px", cursor: "pointer" }}>
             ✏️ Ajustar perfil / capital
           </button>
         </div>
       )}
 
       {/* Filtro de categorias */}
-      <div style={{ display: "flex", gap: "4px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "4px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", gap: "4px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "4px", marginBottom: "14px" }}>
         {categorias.map(cat => (
           <button key={cat} onClick={() => setFiltroCategoria(cat)}
-            style={{ flex: 1, background: filtroCategoria === cat ? "#00e5a022" : "transparent", border: filtroCategoria === cat ? "1px solid #00e5a044" : "1px solid transparent", color: filtroCategoria === cat ? "#00e5a0" : "#555", borderRadius: "7px", padding: "8px", fontSize: "11px", fontWeight: "600", cursor: "pointer" }}>
+            style={{ flex: 1, background: filtroCategoria === cat ? "#00e5a022" : "transparent", border: filtroCategoria === cat ? "1px solid #00e5a044" : "1px solid transparent", color: filtroCategoria === cat ? "#00e5a0" : cores.textFaint, borderRadius: "7px", padding: "8px", fontSize: "11px", fontWeight: "600", cursor: "pointer" }}>
             {cat}
           </button>
         ))}
       </div>
 
       {/* Lista de produtos */}
-      <div style={{ marginBottom: "8px", color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>
+      <div style={{ marginBottom: "8px", color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>
         PRODUTOS DISPONÍVEIS ({produtosFiltrados.length})
       </div>
       {produtosFiltrados.map(produto => (
-        <ProdutoCard key={produto.id} produto={produto} onSimular={setSimulando} />
+        <ProdutoCard key={produto.id} produto={produto} onSimular={setSimulando} cores={cores} />
       ))}
 
-      <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", marginTop: "8px" }}>
-        <span style={{ color: "#444", fontSize: "11px" }}>
+      <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "8px" }}>
+        <span style={{ color: cores.textFaint, fontSize: "11px" }}>
           💡 Simulações são aproximadas e não consideram taxas de custódia. Consulte sua corretora para valores exatos.
         </span>
       </div>

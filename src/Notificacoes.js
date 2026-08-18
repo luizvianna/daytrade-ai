@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#888", textFaint: "#444" };
+}
+
 // Registra o Service Worker
 export async function registrarSW() {
   if (!("serviceWorker" in navigator)) return null;
@@ -85,7 +92,8 @@ export function useNotificacoes() {
 }
 
 // Componente de configuração de notificações
-export default function ConfigNotificacoes({ onClose }) {
+export default function ConfigNotificacoes({ onClose, tema }) {
+  const cores = paleta(tema);
   const { permissao, swRegistrado, suportado, ativar } = useNotificacoes();
   const [ativando, setAtivando] = useState(false);
   const [testando, setTestando] = useState(false);
@@ -116,10 +124,10 @@ export default function ConfigNotificacoes({ onClose }) {
   const info = statusInfo[!suportado ? "not-supported" : permissao] || statusInfo.default;
 
   return (
-    <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "14px", padding: "20px", maxWidth: "400px" }}>
+    <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "20px", maxWidth: "400px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <h3 style={{ fontSize: "15px", fontWeight: "700" }}>📱 Notificações Push</h3>
-        {onClose && <button onClick={onClose} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: "20px" }}>×</button>}
+        {onClose && <button onClick={onClose} style={{ background: "none", border: "none", color: cores.textFaint, cursor: "pointer", fontSize: "20px" }}>×</button>}
       </div>
 
       {/* Status */}
@@ -127,7 +135,7 @@ export default function ConfigNotificacoes({ onClose }) {
         <span style={{ fontSize: "20px" }}>{info.icone}</span>
         <div>
           <div style={{ color: info.cor, fontWeight: "700", fontSize: "13px" }}>{info.texto}</div>
-          <div style={{ color: "#555", fontSize: "11px", marginTop: "2px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "2px" }}>
             {permissao === "granted" ? `Service Worker: ${swRegistrado ? "✅ registrado" : "⏳ registrando..."}` : "Ative para receber alertas no celular"}
           </div>
         </div>
@@ -135,18 +143,18 @@ export default function ConfigNotificacoes({ onClose }) {
 
       {/* O que você vai receber */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>VOCÊ VAI RECEBER</div>
+        <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>VOCÊ VAI RECEBER</div>
         {[
           { icone: "🏦", titulo: "Paper Trading", desc: "Quando a IA abrir ou fechar uma operação" },
           { icone: "🔔", titulo: "Alertas de preço", desc: "Quando um ativo atingir seu preço alvo" },
           { icone: "⭐", titulo: "Score de ativos", desc: "Quando o score mudar significativamente" },
           { icone: "📈", titulo: "Sinais da IA", desc: "Oportunidades de compra e venda" },
         ].map((item, i) => (
-          <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: "1px solid #0d1827" }}>
+          <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: `1px solid ${cores.border}` }}>
             <span style={{ fontSize: "16px" }}>{item.icone}</span>
             <div>
-              <div style={{ color: "#ccc", fontSize: "12px", fontWeight: "600" }}>{item.titulo}</div>
-              <div style={{ color: "#555", fontSize: "11px" }}>{item.desc}</div>
+              <div style={{ color: cores.textSecondary, fontSize: "12px", fontWeight: "600" }}>{item.titulo}</div>
+              <div style={{ color: cores.textFaint, fontSize: "11px" }}>{item.desc}</div>
             </div>
           </div>
         ))}
@@ -160,7 +168,7 @@ export default function ConfigNotificacoes({ onClose }) {
       ) : permissao === "denied" ? (
         <div style={{ background: "#ff4d6d11", border: "1px solid #ff4d6d33", borderRadius: "8px", padding: "10px 14px" }}>
           <div style={{ color: "#ff4d6d", fontSize: "12px", marginBottom: "6px" }}>Notificações bloqueadas no navegador.</div>
-          <div style={{ color: "#888", fontSize: "11px" }}>Para ativar: Chrome → ⋮ → Configurações → Notificações → Permitir para este site</div>
+          <div style={{ color: cores.textSecondary, fontSize: "11px" }}>Para ativar: Chrome → ⋮ → Configurações → Notificações → Permitir para este site</div>
         </div>
       ) : permissao === "granted" ? (
         <div style={{ display: "flex", gap: "8px" }}>
@@ -176,7 +184,7 @@ export default function ConfigNotificacoes({ onClose }) {
         </button>
       )}
 
-      <div style={{ color: "#2a2a2a", fontSize: "10px", textAlign: "center", marginTop: "12px", fontFamily: "monospace" }}>
+      <div style={{ color: cores.textFaint, fontSize: "10px", textAlign: "center", marginTop: "12px", fontFamily: "monospace" }}>
         Funciona mesmo com o app em segundo plano · Chrome Android
       </div>
     </div>
