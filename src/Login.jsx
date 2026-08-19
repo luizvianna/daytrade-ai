@@ -1,38 +1,32 @@
 import { useState } from "react";
-
-// Hash simples para não expor a senha em texto puro no bundle
-const SENHA_HASH = process.env.REACT_APP_ACCESS_PASSWORD || "";
-
-async function hashPassword(password) {
-  const msgBuffer = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
+import { supabase } from "./supabaseClient"; // ajuste o caminho conforme onde você criar esse arquivo
 
 export default function Login({ onLogin }) {
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!senha) { setErro("Digite a senha!"); return; }
+    if (!email || !senha) { setErro("Preencha email e senha!"); return; }
     setLoading(true);
     setErro("");
     try {
-      const hash = await hashPassword(senha);
-      if (hash === SENHA_HASH) {
-        // Salva sessão por 24h
-        const expiry = Date.now() + 24 * 60 * 60 * 1000;
-        sessionStorage.setItem("tradeai_auth", JSON.stringify({ hash, expiry }));
-        onLogin();
-      } else {
-        setErro("Senha incorreta. Tente novamente.");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
+      if (error) {
+        setErro("Email ou senha incorretos. Tente novamente.");
         setSenha("");
+      } else {
+        // supabase.auth já mantém a sessão sozinho (localStorage interno do SDK),
+        // não precisa mais do sessionStorage manual
+        onLogin(data.user);
       }
     } catch (e) {
-      setErro("Erro ao verificar senha.");
+      setErro("Erro ao verificar login.");
     } finally {
       setLoading(false);
     }
@@ -44,7 +38,6 @@ export default function Login({ onLogin }) {
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "'DM Sans','Segoe UI',sans-serif", padding: "20px"
     }}>
-
 
       <div className="card" style={{ width: "100%", maxWidth: "400px" }}>
 
@@ -60,11 +53,25 @@ export default function Login({ onLogin }) {
         {/* Card de login */}
         <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "16px", padding: "28px" }}>
           <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#fff", marginBottom: "6px" }}>Bem-vindo de volta</h2>
-          <p style={{ color: "#444", fontSize: "13px", marginBottom: "24px" }}>Digite sua senha para acessar o sistema</p>
+          <p style={{ color: "#444", fontSize: "13px", marginBottom: "24px" }}>Entre com seu email e senha para acessar o sistema</p>
+
+          {/* Campo de email */}
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", color: "#666", fontSize: "12px", marginBottom: "6px", fontFamily: "monospace", letterSpacing: "0.08em" }}>EMAIL</label>
+            <input
+              className="login-input"
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setErro(""); }}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              placeholder="seu@email.com"
+              style={{ width: "100%", background: "#111a27", border: `1px solid ${erro ? "#ff4d6d" : "#1e2d45"}`, color: "#e0e6f0", borderRadius: "10px", padding: "13px 14px", fontSize: "16px", fontFamily: "monospace", outline: "none", transition: "all 0.2s" }}
+            />
+          </div>
 
           {/* Campo de senha */}
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", color: "#666", fontSize: "12px", marginBottom: "6px", fontFamily: "monospace", letterSpacing: "0.08em" }}>SENHA DE ACESSO</label>
+            <label style={{ display: "block", color: "#666", fontSize: "12px", marginBottom: "6px", fontFamily: "monospace", letterSpacing: "0.08em" }}>SENHA</label>
             <div style={{ position: "relative" }}>
               <input
                 className="login-input"
