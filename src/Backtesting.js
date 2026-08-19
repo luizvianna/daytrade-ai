@@ -15,6 +15,13 @@ const PERIODS = [
   { label: "1 Ano",   range: "1y",  interval: "1wk" },
 ];
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#e0e6f0", textSecondary: "#bbb", textFaint: "#444" };
+}
+
 function calcSMA(candles, period) {
   if (candles.length < period) return candles[candles.length - 1]?.close || 0;
   return candles.slice(-period).reduce((s, c) => s + c.close, 0) / period;
@@ -33,7 +40,7 @@ function calcRSI(candles, period = 14) {
 function fmt(v) { return `R$ ${v.toFixed(2)}`; }
 function pct(v) { return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`; }
 
-function EquityChart({ equity, width = 340, height = 140 }) {
+function EquityChart({ equity, width = 340, height = 140, cores }) {
   if (!equity || equity.length < 2) return null;
   const pad = { l: 50, r: 10, t: 10, b: 24 };
   const w = width - pad.l - pad.r;
@@ -48,6 +55,7 @@ function EquityChart({ equity, width = 340, height = 140 }) {
   const areaPoints = `${pad.l},${pad.t + h} ${points} ${px(equity.length - 1)},${pad.t + h}`;
   const color = values[values.length - 1] >= values[0] ? "#00e5a0" : "#ff4d6d";
   const yLabels = [minV, maxV];
+  const linhaGrade = cores.border;
   return (
     <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
       <defs>
@@ -58,8 +66,8 @@ function EquityChart({ equity, width = 340, height = 140 }) {
       </defs>
       {yLabels.map((v, i) => (
         <g key={i}>
-          <line x1={pad.l} y1={py(v)} x2={width - pad.r} y2={py(v)} stroke="#ffffff08" strokeDasharray="4,4" />
-          <text x={pad.l - 4} y={py(v) + 4} fill="#444" fontSize="9" fontFamily="monospace" textAnchor="end">{fmt(v)}</text>
+          <line x1={pad.l} y1={py(v)} x2={width - pad.r} y2={py(v)} stroke={linhaGrade} strokeDasharray="4,4" />
+          <text x={pad.l - 4} y={py(v) + 4} fill={cores.textFaint} fontSize="9" fontFamily="monospace" textAnchor="end">{fmt(v)}</text>
         </g>
       ))}
       <polygon points={areaPoints} fill="url(#eg)" />
@@ -67,7 +75,7 @@ function EquityChart({ equity, width = 340, height = 140 }) {
       <circle cx={px(0)} cy={py(values[0])} r="3" fill={color} />
       <circle cx={px(equity.length - 1)} cy={py(values[values.length - 1])} r="4" fill={color} />
       {[0, equity.length - 1].map(i => (
-        <text key={i} x={px(i)} y={height - 4} fill="#333" fontSize="8" fontFamily="monospace" textAnchor="middle">
+        <text key={i} x={px(i)} y={height - 4} fill={cores.textFaint} fontSize="8" fontFamily="monospace" textAnchor="middle">
           {equity[i]?.date || ""}
         </text>
       ))}
@@ -75,7 +83,7 @@ function EquityChart({ equity, width = 340, height = 140 }) {
   );
 }
 
-function TradesTable({ trades }) {
+function TradesTable({ trades, cores }) {
   const [page, setPage] = useState(0);
   const perPage = 5;
   const total = Math.ceil(trades.length / perPage);
@@ -84,9 +92,9 @@ function TradesTable({ trades }) {
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", minWidth: "300px" }}>
         <thead>
-          <tr style={{ borderBottom: "1px solid #1e2d45" }}>
+          <tr style={{ borderBottom: `1px solid ${cores.border}` }}>
             {["Entrada", "Saída", "Tipo", "%", "R$"].map(h => (
-              <th key={h} style={{ padding: "6px 8px", color: "#444", fontFamily: "monospace", fontSize: "9px", textAlign: "left" }}>{h}</th>
+              <th key={h} style={{ padding: "6px 8px", color: cores.textFaint, fontFamily: "monospace", fontSize: "9px", textAlign: "left" }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -94,9 +102,9 @@ function TradesTable({ trades }) {
           {slice.map((t, i) => {
             const c = t.pnl >= 0 ? "#00e5a0" : "#ff4d6d";
             return (
-              <tr key={i} style={{ borderBottom: "1px solid #0d1827" }}>
-                <td style={{ padding: "6px 8px", color: "#888", fontFamily: "monospace" }}>{t.entryDate}</td>
-                <td style={{ padding: "6px 8px", color: "#888", fontFamily: "monospace" }}>{t.exitDate}</td>
+              <tr key={i} style={{ borderBottom: `1px solid ${cores.border}` }}>
+                <td style={{ padding: "6px 8px", color: cores.textSecondary, fontFamily: "monospace" }}>{t.entryDate}</td>
+                <td style={{ padding: "6px 8px", color: cores.textSecondary, fontFamily: "monospace" }}>{t.exitDate}</td>
                 <td style={{ padding: "6px 8px" }}>
                   <span style={{ color: t.type === "COMPRA" ? "#00e5a0" : "#ff4d6d", fontSize: "10px", fontWeight: "700" }}>
                     {t.type === "COMPRA" ? "▲" : "▼"} {t.type}
@@ -113,7 +121,7 @@ function TradesTable({ trades }) {
         <div style={{ display: "flex", justifyContent: "center", gap: "6px", marginTop: "10px" }}>
           {Array.from({ length: total }, (_, i) => (
             <button key={i} onClick={() => setPage(i)}
-              style={{ background: page === i ? "#00e5a022" : "#111a27", border: `1px solid ${page === i ? "#00e5a0" : "#1e2d45"}`, color: page === i ? "#00e5a0" : "#555", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
+              style={{ background: page === i ? "#00e5a022" : cores.cardInner, border: `1px solid ${page === i ? "#00e5a0" : cores.border}`, color: page === i ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
               {i + 1}
             </button>
           ))}
@@ -123,7 +131,8 @@ function TradesTable({ trades }) {
   );
 }
 
-export default function Backtesting() {
+export default function Backtesting({ tema = "escuro" }) {
+  const cores = paleta(tema);
   const [asset, setAsset] = useState("PETR4");
   const [period, setPeriod] = useState(PERIODS[1]);
   const [stopLoss, setStopLoss] = useState("2.0");
@@ -245,42 +254,42 @@ export default function Backtesting() {
 
 
       <div style={{ marginBottom: "18px" }}>
-        <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>
+        <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary }}>
           📊 <span style={{ color: "#00e5a0" }}>Backtesting</span>
         </h1>
-        <p style={{ color: "#444", fontSize: "12px" }}>Teste histórico · Capital inicial: R$ 1.000</p>
+        <p style={{ color: cores.textFaint, fontSize: "12px" }}>Teste histórico · Capital inicial: R$ 1.000</p>
       </div>
 
       {/* Config - empilhado no mobile */}
-      <div className="panel">
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
           <div>
-            <div style={{ color: "#555", fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>ATIVO</div>
+            <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>ATIVO</div>
             <select value={asset} onChange={e => setAsset(e.target.value)} disabled={running}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }}>
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }}>
               {ASSETS.map(a => <option key={a}>{a}</option>)}
             </select>
           </div>
           <div>
-            <div style={{ color: "#555", fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>PERÍODO</div>
+            <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>PERÍODO</div>
             <select value={period.label} onChange={e => setPeriod(PERIODS.find(p => p.label === e.target.value))} disabled={running}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }}>
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }}>
               {PERIODS.map(p => <option key={p.label}>{p.label}</option>)}
             </select>
           </div>
           <div>
-            <div style={{ color: "#555", fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>STOP LOSS %</div>
+            <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>STOP LOSS %</div>
             <input type="number" value={stopLoss} onChange={e => setStopLoss(e.target.value)} disabled={running} step="0.5"
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }} />
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }} />
           </div>
           <div>
-            <div style={{ color: "#555", fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>TAKE PROFIT %</div>
+            <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", marginBottom: "5px" }}>TAKE PROFIT %</div>
             <input type="number" value={takeProfit} onChange={e => setTakeProfit(e.target.value)} disabled={running} step="0.5"
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }} />
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontFamily: "monospace" }} />
           </div>
         </div>
 
-        <button className="btn-run" onClick={runBacktest} disabled={running}
+        <button onClick={runBacktest} disabled={running}
           style={{ width: "100%", background: running ? "#555" : "linear-gradient(135deg,#00e5a0,#00b07a)", color: "#000", border: "none", borderRadius: "10px", padding: "14px", fontSize: "15px", fontWeight: "700", cursor: running ? "not-allowed" : "pointer" }}>
           {running ? "⏳ Processando..." : "▶ Rodar Backtest"}
         </button>
@@ -289,7 +298,7 @@ export default function Backtesting() {
           <div style={{ marginTop: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
               <span style={{ color: "#00e5a0", fontSize: "11px", fontFamily: "monospace" }}>{progressMsg}</span>
-              <span style={{ color: "#444", fontSize: "11px", fontFamily: "monospace" }}>{progress}%</span>
+              <span style={{ color: cores.textFaint, fontSize: "11px", fontFamily: "monospace" }}>{progress}%</span>
             </div>
             <div className="prog"><div className="prog-fill" style={{ width: `${progress}%` }} /></div>
           </div>
@@ -303,18 +312,18 @@ export default function Backtesting() {
       {result && (
         <>
           {/* Estratégia */}
-          <div className="panel" style={{ borderColor: "#006eff33" }}>
-            <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>ESTRATÉGIA DA IA</div>
-            <p style={{ color: "#bbb", fontSize: "12px", lineHeight: "1.7", marginBottom: "6px" }}>
+          <div style={{ background: cores.card, border: "1px solid #006eff33", borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>ESTRATÉGIA DA IA</div>
+            <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.7", marginBottom: "6px" }}>
               <strong style={{ color: "#6af" }}>Estratégia:</strong> {result.strategy.estrategia}
             </p>
-            <p style={{ color: "#bbb", fontSize: "12px", lineHeight: "1.7", margin: 0 }}>
+            <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.7", margin: 0 }}>
               <strong style={{ color: "#6af" }}>Perspectiva:</strong> {result.strategy.perspectiva}
             </p>
             <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
               {[["SMA Curta", result.strategy.smaCurta], ["SMA Longa", result.strategy.smaLonga], ["RSI Compra", result.strategy.rsiCompra], ["RSI Venda", result.strategy.rsiVenda]].map(([l, v]) => (
-                <div key={l} style={{ background: "#111a27", borderRadius: "8px", padding: "8px 12px", textAlign: "center" }}>
-                  <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>{l}</div>
+                <div key={l} style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 12px", textAlign: "center" }}>
+                  <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>{l}</div>
                   <div style={{ color: "#6af", fontSize: "18px", fontWeight: "700", fontFamily: "monospace" }}>{v}</div>
                 </div>
               ))}
@@ -329,48 +338,48 @@ export default function Backtesting() {
               { label: "PROFIT FACTOR", value: result.profitFactor.toFixed(2), sub: result.profitFactor >= 1.5 ? "✅ Bom" : result.profitFactor >= 1 ? "⚠️ Neutro" : "❌ Ruim", color: result.profitFactor >= 1.5 ? "#00e5a0" : result.profitFactor >= 1 ? "#ffd60a" : "#ff4d6d" },
               { label: "MAX DRAWDOWN", value: `${result.maxDrawdown.toFixed(1)}%`, sub: "pior queda", color: result.maxDrawdown > -10 ? "#ffd60a" : "#ff4d6d" },
             ].map((s, i) => (
-              <div key={i} className="stat">
-                <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
+              <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+                <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
                 <div style={{ color: s.color, fontSize: "20px", fontWeight: "700" }}>{s.value}</div>
-                <div style={{ color: "#444", fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
+                <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             {[
-              { label: "OPERAÇÕES", value: result.trades.length, color: "#fff" },
+              { label: "OPERAÇÕES", value: result.trades.length, color: cores.textPrimary },
               { label: "P&L TOTAL", value: fmt(result.totalPnl), color: result.totalPnl >= 0 ? "#00e5a0" : "#ff4d6d" },
               { label: "GANHO MÉDIO", value: pct(result.avgWin), color: "#00e5a0" },
               { label: "PERDA MÉDIA", value: pct(result.avgLoss), color: "#ff4d6d" },
             ].map((s, i) => (
-              <div key={i} className="stat">
-                <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{s.label}</div>
+              <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+                <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{s.label}</div>
                 <div style={{ color: s.color, fontSize: "18px", fontWeight: "700" }}>{s.value}</div>
               </div>
             ))}
           </div>
 
           {/* Gráfico */}
-          <div className="panel">
-            <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>CURVA DE EQUITY</div>
-            <EquityChart equity={result.equityCurve} width={340} height={140} />
+          <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>CURVA DE EQUITY</div>
+            <EquityChart equity={result.equityCurve} width={340} height={140} cores={cores} />
           </div>
 
           {/* Operações */}
-          <div className="panel">
-            <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", marginBottom: "12px" }}>
+          <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginBottom: "12px" }}>
               OPERAÇÕES — {result.trades.length} no total
             </div>
             {result.trades.length === 0 ? (
-              <div style={{ color: "#333", textAlign: "center", padding: "20px", fontSize: "12px" }}>Nenhuma operação gerada.</div>
+              <div style={{ color: cores.textFaint, textAlign: "center", padding: "20px", fontSize: "12px" }}>Nenhuma operação gerada.</div>
             ) : (
-              <TradesTable trades={result.trades} />
+              <TradesTable trades={result.trades} cores={cores} />
             )}
           </div>
 
-          <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #ffd60a22", borderRadius: "10px" }}>
-            <span style={{ color: "#555", fontSize: "11px" }}>
+          <div style={{ padding: "10px 14px", background: cores.card, border: "1px solid #ffd60a22", borderRadius: "10px" }}>
+            <span style={{ color: cores.textSecondary, fontSize: "11px" }}>
               <strong style={{ color: "#ffd60a" }}>⚠️</strong> Resultados passados não garantem resultados futuros.
             </span>
           </div>

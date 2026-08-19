@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { authFetch } from "./supabaseClient";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -14,10 +15,17 @@ const TODOS_ATIVOS = [
   "BTC-USD","ETH-USD","BNB-USD","SOL-USD",
 ];
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#aaa", textFaint: "#444" };
+}
+
 // ── API calls ao proxy (substitui localStorage) ──────────────
 async function carregarAlertasBanco() {
   try {
-    const r = await fetch(`${PROXY}/api/alertas`);
+    const r = await authFetch(`${PROXY}/api/alertas`);
     const data = await r.json();
     if (data.success) {
       return data.data.map(a => ({
@@ -40,7 +48,7 @@ async function carregarAlertasBanco() {
 
 async function criarAlertaBanco(alerta) {
   try {
-    const r = await fetch(`${PROXY}/api/alertas`, {
+    const r = await authFetch(`${PROXY}/api/alertas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -58,13 +66,13 @@ async function criarAlertaBanco(alerta) {
 
 async function deletarAlertaBanco(id) {
   try {
-    await fetch(`${PROXY}/api/alertas/${id}`, { method: "DELETE" });
+    await authFetch(`${PROXY}/api/alertas/${id}`, { method: "DELETE" });
   } catch (e) { console.error("Erro ao deletar alerta:", e.message); }
 }
 
 async function atualizarAlertaBanco(id, campos) {
   try {
-    await fetch(`${PROXY}/api/alertas/${id}`, {
+    await authFetch(`${PROXY}/api/alertas/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(campos),
@@ -113,28 +121,28 @@ function AlertaNotificacao({ alerta, onDismiss }) {
 }
 
 // ── Card de alerta ────────────────────────────────────────────
-function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
+function AlertaCard({ alerta, precoAtual, onDelete, onToggle, cores }) {
   const preco = precoAtual || 0;
   const diff = alerta.tipo === "preco_exato"
     ? ((preco - alerta.valor) / alerta.valor * 100).toFixed(2)
     : null;
-  const cor = alerta.disparado ? "#555" : alerta.ativoFlag ? "#00e5a0" : "#ffd60a";
+  const cor = alerta.disparado ? cores.textFaint : alerta.ativoFlag ? "#00e5a0" : "#ffd60a";
   const progressoPct = alerta.tipo === "preco_exato" && preco && alerta.valor
     ? Math.min(100, Math.abs((preco / alerta.valor) * 100))
     : null;
 
   return (
-    <div style={{ background: "#0d1320", border: `1px solid ${alerta.disparado ? "#1e2d45" : cor + "44"}`, borderRadius: "12px", padding: "14px", marginBottom: "10px", opacity: alerta.disparado ? 0.6 : 1 }}>
+    <div style={{ background: cores.card, border: `1px solid ${alerta.disparado ? cores.border : cor + "44"}`, borderRadius: "12px", padding: "14px", marginBottom: "10px", opacity: alerta.disparado ? 0.6 : 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px", flexWrap: "wrap" }}>
-            <span style={{ color: "#fff", fontWeight: "700", fontSize: "15px", fontFamily: "monospace" }}>{alerta.ativo}</span>
+            <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "15px", fontFamily: "monospace" }}>{alerta.ativo}</span>
             <span style={{ background: `${cor}22`, color: cor, border: `1px solid ${cor}44`, borderRadius: "4px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace", fontWeight: "700" }}>
               {alerta.tipo === "preco_exato" ? "💰 PREÇO EXATO" : alerta.direcao === "sobe" ? "📈 SUBIDA %" : "📉 QUEDA %"}
             </span>
             {alerta.disparado && <span style={{ background: "#00e5a022", color: "#00e5a0", borderRadius: "4px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace" }}>✅ DISPARADO</span>}
           </div>
-          <div style={{ color: "#aaa", fontSize: "12px" }}>
+          <div style={{ color: cores.textSecondary, fontSize: "12px" }}>
             {alerta.tipo === "preco_exato"
               ? `Alerta quando atingir ${fmt(alerta.valor)}`
               : `Alerta quando ${alerta.direcao === "sobe" ? "subir" : "cair"} ${alerta.valor}%`}
@@ -142,7 +150,7 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           <button onClick={() => onToggle(alerta.id, alerta.ativoFlag)}
-            style={{ background: alerta.ativoFlag ? "#00e5a022" : "#111a27", border: `1px solid ${alerta.ativoFlag ? "#00e5a044" : "#1e2d45"}`, color: alerta.ativoFlag ? "#00e5a0" : "#555", borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
+            style={{ background: alerta.ativoFlag ? "#00e5a022" : cores.cardInner, border: `1px solid ${alerta.ativoFlag ? "#00e5a044" : cores.border}`, color: alerta.ativoFlag ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "4px 10px", fontSize: "11px", cursor: "pointer" }}>
             {alerta.ativoFlag ? "ON" : "OFF"}
           </button>
           <button onClick={() => onDelete(alerta.id)}
@@ -153,18 +161,18 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-        <div style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>PREÇO ATUAL</div>
-          <div style={{ color: "#fff", fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>{preco ? fmt(preco) : "..."}</div>
+        <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>PREÇO ATUAL</div>
+          <div style={{ color: cores.textPrimary, fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>{preco ? fmt(preco) : "..."}</div>
         </div>
-        <div style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>ALVO</div>
+        <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>ALVO</div>
           <div style={{ color: cor, fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>
             {alerta.tipo === "preco_exato" ? fmt(alerta.valor) : `${alerta.direcao === "sobe" ? "+" : "-"}${alerta.valor}%`}
           </div>
         </div>
-        <div style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>DISTÂNCIA</div>
+        <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>DISTÂNCIA</div>
           <div style={{ color: diff >= 0 ? "#00e5a0" : "#ff4d6d", fontSize: "14px", fontWeight: "700", fontFamily: "monospace" }}>
             {alerta.tipo === "preco_exato" && diff !== null ? `${diff >= 0 ? "+" : ""}${diff}%` : "—"}
           </div>
@@ -173,13 +181,13 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
 
       {alerta.tipo === "preco_exato" && progressoPct && (
         <div style={{ marginTop: "10px" }}>
-          <div style={{ height: "4px", background: "#1e2d45", borderRadius: "2px", overflow: "hidden" }}>
+          <div style={{ height: "4px", background: cores.border, borderRadius: "2px", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${Math.min(progressoPct, 100)}%`, background: cor, borderRadius: "2px", transition: "width 0.5s" }} />
           </div>
         </div>
       )}
 
-      <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", marginTop: "8px" }}>
+      <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginTop: "8px" }}>
         Criado: {alerta.criadoEm}{alerta.disparadoEm && ` · Disparado: ${alerta.disparadoEm}`}
       </div>
     </div>
@@ -187,7 +195,8 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle }) {
 }
 
 // ── Componente principal ──────────────────────────────────────
-export default function Alertas() {
+export default function Alertas({ tema = "escuro" }) {
+  const cores = paleta(tema);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [precos, setPrecos] = useState({});
@@ -335,12 +344,12 @@ export default function Alertas() {
 
       <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>🔔 <span style={{ color: "#00e5a0" }}>Alertas</span> de Preço</h1>
-          <p style={{ color: "#444", fontSize: "12px" }}>Monitoramento automático a cada 30 segundos</p>
+          <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary }}>🔔 <span style={{ color: "#00e5a0" }}>Alertas</span> de Preço</h1>
+          <p style={{ color: cores.textFaint, fontSize: "12px" }}>Monitoramento automático a cada 30 segundos</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: monitorando ? "#00e5a0" : "#555", animation: monitorando ? "pulse 2s infinite" : "none" }} />
-          <span style={{ color: monitorando ? "#00e5a0" : "#555", fontSize: "11px", fontFamily: "monospace" }}>
+          <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: monitorando ? "#00e5a0" : cores.textFaint, animation: monitorando ? "pulse 2s infinite" : "none" }} />
+          <span style={{ color: monitorando ? "#00e5a0" : cores.textFaint, fontSize: "11px", fontFamily: "monospace" }}>
             {monitorando ? `MONITORANDO (${alertasAtivos.length})` : "PARADO"}
           </span>
         </div>
@@ -350,23 +359,23 @@ export default function Alertas() {
         {[
           { label: "ATIVOS", value: alertasAtivos.length, color: "#00e5a0" },
           { label: "DISPARADOS", value: alertasDisparados.length, color: "#ffd60a" },
-          { label: "TOTAL", value: alertas.length, color: "#fff" },
+          { label: "TOTAL", value: alertas.length, color: cores.textPrimary },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "12px 14px", textAlign: "center" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{s.label}</div>
+          <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px 14px", textAlign: "center" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{s.label}</div>
             <div style={{ color: s.color, fontSize: "24px", fontWeight: "700" }}>{s.value}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: "4px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "4px", marginBottom: "14px" }}>
+      <div style={{ display: "flex", gap: "4px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "4px", marginBottom: "14px" }}>
         {[
           { id: "ativos", label: `🔔 Ativos (${alertasAtivos.length})` },
           { id: "criar", label: "➕ Criar Alerta" },
           { id: "historico", label: `📋 Histórico (${alertasDisparados.length})` },
         ].map(tab => (
           <button key={tab.id} className="tab-btn" onClick={() => setAba(tab.id)}
-            style={{ flex: 1, background: aba === tab.id ? "#00e5a015" : "transparent", border: aba === tab.id ? "1px solid #00e5a033" : "1px solid transparent", color: aba === tab.id ? "#00e5a0" : "#555", borderRadius: "7px", padding: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+            style={{ flex: 1, background: aba === tab.id ? "#00e5a015" : "transparent", border: aba === tab.id ? "1px solid #00e5a033" : "1px solid transparent", color: aba === tab.id ? "#00e5a0" : cores.textFaint, borderRadius: "7px", padding: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
             {tab.label}
           </button>
         ))}
@@ -377,9 +386,9 @@ export default function Alertas() {
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px", color: "#00e5a0" }}>⏳ Carregando alertas...</div>
           ) : alertasAtivos.length === 0 ? (
-            <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "40px", textAlign: "center" }}>
+            <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "40px", textAlign: "center" }}>
               <div style={{ fontSize: "40px", marginBottom: "12px" }}>🔕</div>
-              <div style={{ color: "#444", fontSize: "14px", marginBottom: "8px" }}>Nenhum alerta ativo</div>
+              <div style={{ color: cores.textFaint, fontSize: "14px", marginBottom: "8px" }}>Nenhum alerta ativo</div>
               <button onClick={() => setAba("criar")}
                 style={{ background: "linear-gradient(135deg,#00e5a0,#00b07a)", color: "#000", border: "none", borderRadius: "8px", padding: "10px 20px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
                 ➕ Criar primeiro alerta
@@ -387,30 +396,30 @@ export default function Alertas() {
             </div>
           ) : (
             alertasAtivos.map(a => (
-              <AlertaCard key={a.id} alerta={a} precoAtual={precos[a.ativo]?.price} onDelete={deletarAlerta} onToggle={toggleAlerta} />
+              <AlertaCard key={a.id} alerta={a} precoAtual={precos[a.ativo]?.price} onDelete={deletarAlerta} onToggle={toggleAlerta} cores={cores} />
             ))
           )}
         </div>
       )}
 
       {aba === "criar" && (
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "20px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "16px" }}>NOVO ALERTA</div>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "20px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "16px" }}>NOVO ALERTA</div>
 
           <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Ativo</label>
+            <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Ativo</label>
             <select value={novoAtivo} onChange={e => setNovoAtivo(e.target.value)}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 12px", fontSize: "14px", fontFamily: "monospace" }}>
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px 12px", fontSize: "14px", fontFamily: "monospace" }}>
               {TODOS_ATIVOS.map(a => <option key={a} value={a}>{a}{precos[a] ? ` · R$${precos[a].price?.toFixed(2)}` : ""}</option>)}
             </select>
           </div>
 
           <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Tipo de alerta</label>
+            <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Tipo de alerta</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               {[{ v: "preco_exato", l: "💰 Preço exato" }, { v: "variacao_pct", l: "📊 Variação %" }].map(t => (
                 <button key={t.v} onClick={() => setNovoTipo(t.v)}
-                  style={{ background: novoTipo === t.v ? "#00e5a022" : "#111a27", border: `1px solid ${novoTipo === t.v ? "#00e5a0" : "#1e2d45"}`, color: novoTipo === t.v ? "#00e5a0" : "#666", borderRadius: "8px", padding: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
+                  style={{ background: novoTipo === t.v ? "#00e5a022" : cores.cardInner, border: `1px solid ${novoTipo === t.v ? "#00e5a0" : cores.border}`, color: novoTipo === t.v ? "#00e5a0" : cores.textSecondary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
                   {t.l}
                 </button>
               ))}
@@ -419,11 +428,11 @@ export default function Alertas() {
 
           {novoTipo === "variacao_pct" && (
             <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Direção</label>
+              <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Direção</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                 {[{ v: "sobe", l: "📈 Sobe X%" }, { v: "cai", l: "📉 Cai X%" }].map(d => (
                   <button key={d.v} onClick={() => setNovoDirecao(d.v)}
-                    style={{ background: novoDirecao === d.v ? (d.v === "sobe" ? "#00e5a022" : "#ff4d6d22") : "#111a27", border: `1px solid ${novoDirecao === d.v ? (d.v === "sobe" ? "#00e5a0" : "#ff4d6d") : "#1e2d45"}`, color: novoDirecao === d.v ? (d.v === "sobe" ? "#00e5a0" : "#ff4d6d") : "#666", borderRadius: "8px", padding: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
+                    style={{ background: novoDirecao === d.v ? (d.v === "sobe" ? "#00e5a022" : "#ff4d6d22") : cores.cardInner, border: `1px solid ${novoDirecao === d.v ? (d.v === "sobe" ? "#00e5a0" : "#ff4d6d") : cores.border}`, color: novoDirecao === d.v ? (d.v === "sobe" ? "#00e5a0" : "#ff4d6d") : cores.textSecondary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
                     {d.l}
                   </button>
                 ))}
@@ -432,32 +441,32 @@ export default function Alertas() {
           )}
 
           <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>
+            <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>
               {novoTipo === "preco_exato" ? "Preço alvo (R$)" : "Variação alvo (%)"}
             </label>
             <input type="number" value={novoValor} onChange={e => setNovoValor(e.target.value)} step="0.01"
               placeholder={novoTipo === "preco_exato" ? "Ex: 45.50" : "Ex: 5"}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "12px 14px", fontSize: "16px", fontFamily: "monospace" }} />
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "12px 14px", fontSize: "16px", fontFamily: "monospace" }} />
             {novoTipo === "preco_exato" && precos[novoAtivo]?.price && (
-              <div style={{ color: "#555", fontSize: "11px", marginTop: "4px", fontFamily: "monospace" }}>
+              <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "4px", fontFamily: "monospace" }}>
                 Preço atual: R${precos[novoAtivo].price.toFixed(2)}
               </div>
             )}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#111a27", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: cores.cardInner, borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
             <div>
-              <div style={{ color: "#888", fontSize: "12px" }}>📧 Notificação por email</div>
-              <div style={{ color: "#444", fontSize: "10px" }}>Receber email quando disparar</div>
+              <div style={{ color: cores.textSecondary, fontSize: "12px" }}>📧 Notificação por email</div>
+              <div style={{ color: cores.textFaint, fontSize: "10px" }}>Receber email quando disparar</div>
             </div>
             <button onClick={() => setNovoEmail(e => !e)}
-              style={{ background: novoEmail ? "#00e5a022" : "#111a27", border: `1px solid ${novoEmail ? "#00e5a0" : "#1e2d45"}`, color: novoEmail ? "#00e5a0" : "#555", borderRadius: "6px", padding: "6px 14px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
+              style={{ background: novoEmail ? "#00e5a022" : cores.cardInner, border: `1px solid ${novoEmail ? "#00e5a0" : cores.border}`, color: novoEmail ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "6px 14px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
               {novoEmail ? "ON ✓" : "OFF"}
             </button>
           </div>
 
           <button onClick={criarAlerta} disabled={!novoValor || salvando}
-            style={{ width: "100%", background: !novoValor ? "#1e2d45" : "linear-gradient(135deg,#00e5a0,#00b07a)", color: !novoValor ? "#555" : "#000", border: "none", borderRadius: "10px", padding: "14px", fontSize: "15px", fontWeight: "700", cursor: !novoValor ? "not-allowed" : "pointer" }}>
+            style={{ width: "100%", background: !novoValor ? cores.border : "linear-gradient(135deg,#00e5a0,#00b07a)", color: !novoValor ? cores.textFaint : "#000", border: "none", borderRadius: "10px", padding: "14px", fontSize: "15px", fontWeight: "700", cursor: !novoValor ? "not-allowed" : "pointer" }}>
             {salvando ? "⏳ Salvando..." : "🔔 Criar Alerta"}
           </button>
         </div>
@@ -468,20 +477,20 @@ export default function Alertas() {
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px", color: "#00e5a0" }}>⏳ Carregando...</div>
           ) : alertasDisparados.length === 0 ? (
-            <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "40px", textAlign: "center" }}>
+            <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "40px", textAlign: "center" }}>
               <div style={{ fontSize: "40px", marginBottom: "12px" }}>📋</div>
-              <div style={{ color: "#444", fontSize: "14px" }}>Nenhum alerta disparado ainda</div>
+              <div style={{ color: cores.textFaint, fontSize: "14px" }}>Nenhum alerta disparado ainda</div>
             </div>
           ) : (
             alertasDisparados.map(a => (
-              <AlertaCard key={a.id} alerta={a} precoAtual={precos[a.ativo]?.price} onDelete={deletarAlerta} onToggle={toggleAlerta} />
+              <AlertaCard key={a.id} alerta={a} precoAtual={precos[a.ativo]?.price} onDelete={deletarAlerta} onToggle={toggleAlerta} cores={cores} />
             ))
           )}
         </div>
       )}
 
-      <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", marginTop: "14px" }}>
-        <span style={{ color: "#444", fontSize: "11px" }}>
+      <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "14px" }}>
+        <span style={{ color: cores.textFaint, fontSize: "11px" }}>
           🗄️ Alertas salvos no banco Supabase · 🔄 Verificação a cada 30s · 📧 Email via EmailJS
         </span>
       </div>

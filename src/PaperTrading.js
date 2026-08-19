@@ -13,6 +13,13 @@ const ASSETS = [
   "ABEV3","B3SA3","RENT3","SUZB3","GGBR4","EMBR3",
 ];
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#888", textFaint: "#444" };
+}
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -78,9 +85,9 @@ const sendEmail = async (params) => {
   } catch { return false; }
 };
 
-function CandleChart({ candles, height = 150 }) {
+function CandleChart({ candles, height = 150, cores }) {
   if (!candles || candles.length === 0) return (
-    <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "#2a2a2a", fontSize: "13px" }}>Carregando candles...</div>
+    <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: cores.textFaint, fontSize: "13px" }}>Carregando candles...</div>
   );
   const last = candles.slice(-40);
   const width = 340;
@@ -139,35 +146,35 @@ function MiniEquity({ data }) {
   );
 }
 
-function PositionCard({ position, currentPrice, onClose }) {
+function PositionCard({ position, currentPrice, onClose, cores }) {
   if (!position || !currentPrice) return null;
   const pnlPct = position.type === "COMPRA" ? ((currentPrice - position.entryPrice) / position.entryPrice) * 100 : ((position.entryPrice - currentPrice) / position.entryPrice) * 100;
   const pnlVal = position.size * (pnlPct / 100);
   const color = pnlVal >= 0 ? "#00e5a0" : "#ff4d6d";
   const elapsed = Math.floor((Date.now() - position.openedAt) / 60000);
   return (
-    <div style={{ background: "#0d1320", border: `2px solid ${color}44`, borderRadius: "12px", padding: "14px", marginBottom: "12px" }}>
+    <div style={{ background: cores.card, border: `2px solid ${color}44`, borderRadius: "12px", padding: "14px", marginBottom: "12px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "#fff", fontWeight: "700", fontSize: "16px" }}>{position.asset}</span>
+          <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "16px" }}>{position.asset}</span>
           <span style={{ background: position.type === "COMPRA" ? "#00e5a022" : "#ff4d6d22", color: position.type === "COMPRA" ? "#00e5a0" : "#ff4d6d", border: `1px solid ${position.type === "COMPRA" ? "#00e5a044" : "#ff4d6d44"}`, borderRadius: "4px", padding: "2px 8px", fontSize: "11px", fontFamily: "monospace", fontWeight: "700" }}>
             {position.type === "COMPRA" ? "▲ COMPRA" : "▼ VENDA"}
           </span>
-          <span style={{ color: "#444", fontSize: "11px" }}>{elapsed}min</span>
+          <span style={{ color: cores.textFaint, fontSize: "11px" }}>{elapsed}min</span>
         </div>
         <button onClick={onClose} style={{ background: "#ff4d6d22", border: "1px solid #ff4d6d55", color: "#ff4d6d", borderRadius: "8px", padding: "5px 10px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>✕</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "10px" }}>
-        {[{ label: "Entrada", value: fmt(position.entryPrice), c: "#aaa" }, { label: "Atual", value: fmt(currentPrice), c: "#fff" }, { label: "Stop Loss", value: fmt(position.sl), c: "#ff4d6d" }, { label: "Take Profit", value: fmt(position.tp), c: "#00e5a0" }].map(({ label, value, c }) => (
-          <div key={label} style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>{label}</div>
+        {[{ label: "Entrada", value: fmt(position.entryPrice), c: cores.textSecondary }, { label: "Atual", value: fmt(currentPrice), c: cores.textPrimary }, { label: "Stop Loss", value: fmt(position.sl), c: "#ff4d6d" }, { label: "Take Profit", value: fmt(position.tp), c: "#00e5a0" }].map(({ label, value, c }) => (
+          <div key={label} style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>{label}</div>
             <div style={{ color: c, fontSize: "13px", fontWeight: "700", fontFamily: "monospace", marginTop: "2px" }}>{value}</div>
           </div>
         ))}
       </div>
-      <div style={{ background: "#111a27", borderRadius: "8px", padding: "12px", display: "flex", justifyContent: "space-between" }}>
-        <div><div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>P&L</div><div style={{ color, fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{fmt(pnlVal)}</div></div>
-        <div style={{ textAlign: "right" }}><div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>VARIAÇÃO</div><div style={{ color, fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{pct(pnlPct)}</div></div>
+      <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "12px", display: "flex", justifyContent: "space-between" }}>
+        <div><div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>P&L</div><div style={{ color, fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{fmt(pnlVal)}</div></div>
+        <div style={{ textAlign: "right" }}><div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>VARIAÇÃO</div><div style={{ color, fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{pct(pnlPct)}</div></div>
       </div>
     </div>
   );
@@ -187,16 +194,16 @@ function SignalAlert({ alert, onDismiss }) {
   );
 }
 
-function AnalysisPanel({ analysis, indicators, countdown }) {
+function AnalysisPanel({ analysis, indicators, countdown, cores }) {
   const [expanded, setExpanded] = useState(false);
   if (!indicators && !analysis) return null;
-  const signalColor = !analysis ? "#555" : analysis.action === "COMPRAR" ? "#00e5a0" : analysis.action === "VENDER" ? "#ff4d6d" : "#ffd60a";
+  const signalColor = !analysis ? cores.textFaint : analysis.action === "COMPRAR" ? "#00e5a0" : analysis.action === "VENDER" ? "#ff4d6d" : "#ffd60a";
 
   const getInfo = (type, val, val2) => {
     if (type === "rsi") {
       if (val >= 70) return { label: "SOBRECOMPRADO", color: "#ff4d6d", desc: `RSI ${val.toFixed(0)} — risco de queda.` };
       if (val <= 30) return { label: "SOBREVENDIDO", color: "#00e5a0", desc: `RSI ${val.toFixed(0)} — possível compra.` };
-      return { label: "NEUTRO", color: "#888", desc: `RSI ${val.toFixed(0)} — sem pressão clara.` };
+      return { label: "NEUTRO", color: cores.textSecondary, desc: `RSI ${val.toFixed(0)} — sem pressão clara.` };
     }
     if (type === "sma") {
       if (val > val2 * 1.002) return { label: "ALTA ▲", color: "#00e5a0", desc: `SMA5 acima da SMA20. Tendência de alta.` };
@@ -206,35 +213,35 @@ function AnalysisPanel({ analysis, indicators, countdown }) {
     if (type === "vol") {
       if (val >= 1.5) return { label: "ALTO ▲", color: "#00e5a0", desc: `Volume ${val.toFixed(1)}x. Movimento confiável.` };
       if (val <= 0.5) return { label: "BAIXO ▼", color: "#ff4d6d", desc: `Volume fraco. Sinal menos confiável.` };
-      return { label: "NORMAL →", color: "#888", desc: `Volume normal.` };
+      return { label: "NORMAL →", color: cores.textSecondary, desc: `Volume normal.` };
     }
     if (type === "trend") {
       if (val === "ALTA") return { label: "ALTA ▲", color: "#00e5a0", desc: `${val2}/20 candles de alta.` };
       if (val === "BAIXA") return { label: "BAIXA ▼", color: "#ff4d6d", desc: `Apenas ${val2}/20 de alta.` };
       return { label: "LATERAL →", color: "#ffd60a", desc: `Sem direção clara.` };
     }
-    return { label: "—", color: "#555", desc: "" };
+    return { label: "—", color: cores.textFaint, desc: "" };
   };
 
   return (
-    <div style={{ background: "#0a0f1a", border: "1px solid #1e2d45", borderRadius: "12px", padding: "14px", marginTop: "12px" }}>
+    <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "14px", marginTop: "12px" }}>
       <button onClick={() => setExpanded(e => !e)}
         style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "14px" }}>📊</span>
-          <span style={{ fontWeight: "700", fontSize: "13px", color: "#fff" }}>ANÁLISE DETALHADA</span>
+          <span style={{ fontWeight: "700", fontSize: "13px", color: cores.textPrimary }}>ANÁLISE DETALHADA</span>
           {analysis && (
             <span style={{ background: `${signalColor}11`, border: `1px solid ${signalColor}44`, color: signalColor, borderRadius: "6px", padding: "2px 8px", fontSize: "11px", fontWeight: "700", fontFamily: "monospace" }}>
               {analysis.action} · {analysis.confidence}%
             </span>
           )}
         </div>
-        <span style={{ color: "#444", fontSize: "14px" }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: cores.textFaint, fontSize: "14px" }}>{expanded ? "▲" : "▼"}</span>
       </button>
 
       {countdown > 0 && (
-        <div style={{ color: "#444", fontSize: "11px", fontFamily: "monospace", marginTop: "6px" }}>
-          ⏱ Próxima análise em <strong style={{ color: countdown <= 10 ? "#ffd60a" : "#555" }}>{countdown}s</strong>
+        <div style={{ color: cores.textFaint, fontSize: "11px", fontFamily: "monospace", marginTop: "6px" }}>
+          ⏱ Próxima análise em <strong style={{ color: countdown <= 10 ? "#ffd60a" : cores.textSecondary }}>{countdown}s</strong>
         </div>
       )}
 
@@ -249,11 +256,11 @@ function AnalysisPanel({ analysis, indicators, countdown }) {
                 { title: "VOLUME", ...getInfo("vol", indicators.volume.ratio), value: `${indicators.volume.ratio.toFixed(1)}x` },
                 { title: "TENDÊNCIA", ...getInfo("trend", indicators.trend, indicators.bullCandles), value: indicators.trend },
               ].map(({ title, label, color: c, desc, value }) => (
-                <div key={title} style={{ background: "#0d1320", border: `1px solid ${c}22`, borderRadius: "8px", padding: "10px" }}>
-                  <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{title}</div>
+                <div key={title} style={{ background: cores.cardInner, border: `1px solid ${c}22`, borderRadius: "8px", padding: "10px" }}>
+                  <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{title}</div>
                   <div style={{ color: c, fontSize: "14px", fontWeight: "700" }}>{value}</div>
                   <div style={{ color: c, fontSize: "9px", fontWeight: "600", marginTop: "2px" }}>{label}</div>
-                  <div style={{ color: "#555", fontSize: "10px", lineHeight: "1.4", marginTop: "6px", borderTop: "1px solid #1e2d45", paddingTop: "6px" }}>{desc}</div>
+                  <div style={{ color: cores.textSecondary, fontSize: "10px", lineHeight: "1.4", marginTop: "6px", borderTop: `1px solid ${cores.border}`, paddingTop: "6px" }}>{desc}</div>
                 </div>
               ))}
             </div>
@@ -261,27 +268,27 @@ function AnalysisPanel({ analysis, indicators, countdown }) {
 
           {/* Raciocínio da IA */}
           {analysis && (
-            <div style={{ background: "#0d1320", border: `1px solid ${signalColor}33`, borderRadius: "10px", padding: "14px", marginTop: "10px" }}>
-              <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>💬 O QUE A IA ESTÁ PENSANDO · {analysis.time}</div>
+            <div style={{ background: cores.cardInner, border: `1px solid ${signalColor}33`, borderRadius: "10px", padding: "14px", marginTop: "10px" }}>
+              <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginBottom: "8px" }}>💬 O QUE A IA ESTÁ PENSANDO · {analysis.time}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
                 <span style={{ color: signalColor, fontSize: "16px", fontWeight: "700", fontFamily: "monospace" }}>
                   {analysis.action === "COMPRAR" ? "▲ COMPRAR" : analysis.action === "VENDER" ? "▼ VENDER" : analysis.action === "FECHAR" ? "✕ FECHAR" : analysis.action === "MANTER" ? "● MANTER" : "◆ AGUARDAR"}
                 </span>
-                <span style={{ background: "#111a27", color: analysis.confidence >= 70 ? "#00e5a0" : "#ffd60a", borderRadius: "4px", padding: "2px 7px", fontSize: "10px", fontFamily: "monospace" }}>{analysis.confidence}%</span>
-                <span style={{ background: "#111a27", color: analysis.risk === "BAIXO" ? "#00e5a0" : analysis.risk === "MÉDIO" ? "#ffd60a" : "#ff4d6d", borderRadius: "4px", padding: "2px 7px", fontSize: "10px", fontFamily: "monospace" }}>Risco {analysis.risk}</span>
+                <span style={{ background: cores.card, color: analysis.confidence >= 70 ? "#00e5a0" : "#ffd60a", borderRadius: "4px", padding: "2px 7px", fontSize: "10px", fontFamily: "monospace" }}>{analysis.confidence}%</span>
+                <span style={{ background: cores.card, color: analysis.risk === "BAIXO" ? "#00e5a0" : analysis.risk === "MÉDIO" ? "#ffd60a" : "#ff4d6d", borderRadius: "4px", padding: "2px 7px", fontSize: "10px", fontFamily: "monospace" }}>Risco {analysis.risk}</span>
               </div>
-              <div style={{ background: "#111a27", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${signalColor}`, marginBottom: "10px" }}>
-                <p style={{ color: "#ddd", fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{analysis.fullReasoning || analysis.reasoning}</p>
+              <div style={{ background: cores.card, borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${signalColor}`, marginBottom: "10px" }}>
+                <p style={{ color: cores.textPrimary, fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{analysis.fullReasoning || analysis.reasoning}</p>
               </div>
               {(analysis.pros?.length > 0 || analysis.cons?.length > 0) && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   <div style={{ background: "#00e5a008", border: "1px solid #00e5a022", borderRadius: "8px", padding: "10px" }}>
                     <div style={{ color: "#00e5a0", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>✅ A FAVOR</div>
-                    {(analysis.pros || []).map((p, i) => <div key={i} style={{ color: "#aaa", fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
+                    {(analysis.pros || []).map((p, i) => <div key={i} style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
                   </div>
                   <div style={{ background: "#ff4d6d08", border: "1px solid #ff4d6d22", borderRadius: "8px", padding: "10px" }}>
                     <div style={{ color: "#ff4d6d", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>⚠️ RISCOS</div>
-                    {(analysis.cons || []).map((c, i) => <div key={i} style={{ color: "#aaa", fontSize: "11px", lineHeight: "1.6" }}>• {c}</div>)}
+                    {(analysis.cons || []).map((c, i) => <div key={i} style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.6" }}>• {c}</div>)}
                   </div>
                 </div>
               )}
@@ -293,7 +300,8 @@ function AnalysisPanel({ analysis, indicators, countdown }) {
   );
 }
 
-export default function PaperTrading() {
+export default function PaperTrading({ tema = "escuro" }) {
+  const cores = paleta(tema);
   const isMobile = useIsMobile();
   const [asset, setAsset] = useState("PETR4");
   const [stopLoss, setStopLoss] = useState("2.0");
@@ -493,11 +501,11 @@ export default function PaperTrading() {
       {/* Header da página */}
       <div style={{ marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "2px" }}>🏦 <span style={{ color: "#00e5a0" }}>Paper Trading</span></h1>
-          <p style={{ color: "#444", fontSize: "11px" }}>Capital: {fmt(CAPITAL_INICIAL)} · Groq LLaMA 3.3</p>
+          <h1 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "2px", color: cores.textPrimary }}>🏦 <span style={{ color: "#00e5a0" }}>Paper Trading</span></h1>
+          <p style={{ color: cores.textFaint, fontSize: "11px" }}>Capital: {fmt(CAPITAL_INICIAL)} · Groq LLaMA 3.3</p>
         </div>
         {running && (
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0d1320", border: "1px solid #00e5a033", borderRadius: "8px", padding: "6px 10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: cores.card, border: "1px solid #00e5a033", borderRadius: "8px", padding: "6px 10px" }}>
             <div className="pulse" style={{ width: "7px", height: "7px", borderRadius: "50%", background: loadingAI ? "#ffd60a" : "#00e5a0" }} />
             <span style={{ color: loadingAI ? "#ffd60a" : "#00e5a0", fontSize: "11px", fontFamily: "monospace" }}>{status}</span>
           </div>
@@ -511,70 +519,70 @@ export default function PaperTrading() {
         {[
           { label: "CAPITAL", value: fmt(capital), sub: pct(totalPnlPct), color: totalPnlColor },
           { label: "P&L TOTAL", value: `${totalPnl >= 0 ? "+" : ""}${fmt(totalPnl)}`, sub: "desde o início", color: totalPnlColor },
-          { label: "WIN RATE", value: `${winRate.toFixed(1)}%`, sub: `${wins.length}W / ${losses.length}L`, color: winRate >= 50 ? "#00e5a0" : trades.length === 0 ? "#555" : "#ff4d6d" },
-          { label: "STATUS", value: running ? (position ? `🟡 ${position.type}` : "🟢 ATIVO") : "⚪ PARADO", sub: position ? position.asset : "sem posição", color: running ? "#00e5a0" : "#555" },
+          { label: "WIN RATE", value: `${winRate.toFixed(1)}%`, sub: `${wins.length}W / ${losses.length}L`, color: winRate >= 50 ? "#00e5a0" : trades.length === 0 ? cores.textFaint : "#ff4d6d" },
+          { label: "STATUS", value: running ? (position ? `🟡 ${position.type}` : "🟢 ATIVO") : "⚪ PARADO", sub: position ? position.asset : "sem posição", color: running ? "#00e5a0" : cores.textFaint },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "12px 14px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
+          <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
             <div style={{ color: s.color, fontSize: "17px", fontWeight: "700" }}>{s.value}</div>
-            <div style={{ color: "#444", fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
+            <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Posição aberta */}
       {position ? (
-        <PositionCard position={position} currentPrice={currentPrice || position.entryPrice} onClose={() => closePosition("Manual", currentPrice)} />
+        <PositionCard position={position} currentPrice={currentPrice || position.entryPrice} onClose={() => closePosition("Manual", currentPrice)} cores={cores} />
       ) : (
-        <div className="panel" style={{ textAlign: "center", padding: "20px" }}>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "12px", textAlign: "center", padding: "20px" }}>
           <div style={{ fontSize: "24px", marginBottom: "6px" }}>◯</div>
-          <div style={{ color: "#333", fontSize: "13px" }}>{running ? "IA monitorando..." : "Sem posição aberta"}</div>
+          <div style={{ color: cores.textFaint, fontSize: "13px" }}>{running ? "IA monitorando..." : "Sem posição aberta"}</div>
         </div>
       )}
 
       {/* Gráfico */}
-      <div className="panel">
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <div>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace" }}>{asset} · 5 MIN · TEMPO REAL ⚡</div>
-            <div style={{ color: currentPrice ? "#00e5a0" : "#555", fontSize: "22px", fontWeight: "700", fontFamily: "monospace" }}>{currentPrice ? fmt(currentPrice) : "..."}</div>
-            {lastUpdate && <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace" }}>{lastUpdate}</div>}
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace" }}>{asset} · 5 MIN · TEMPO REAL ⚡</div>
+            <div style={{ color: currentPrice ? "#00e5a0" : cores.textFaint, fontSize: "22px", fontWeight: "700", fontFamily: "monospace" }}>{currentPrice ? fmt(currentPrice) : "..."}</div>
+            {lastUpdate && <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace" }}>{lastUpdate}</div>}
           </div>
           <div style={{ textAlign: "right" }}>
-            {loadingData && <div style={{ color: "#555", fontSize: "11px" }}>🔄</div>}
+            {loadingData && <div style={{ color: cores.textFaint, fontSize: "11px" }}>🔄</div>}
             {loadingAI && <div className="pulse" style={{ color: "#ffd60a", fontSize: "11px" }}>🤖</div>}
-            <div style={{ color: "#2a2a2a", fontSize: "10px", fontFamily: "monospace" }}>{candles.length} candles</div>
+            <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace" }}>{candles.length} candles</div>
           </div>
         </div>
-        <CandleChart candles={candles} height={140} />
+        <CandleChart candles={candles} height={140} cores={cores} />
       </div>
 
       {/* Configuração */}
-      <div className="panel">
-        <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>CONFIGURAÇÃO</div>
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
+        <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>CONFIGURAÇÃO</div>
         <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>Ativo</label>
+          <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "4px" }}>Ativo</label>
           <select value={asset} onChange={e => setAsset(e.target.value)} disabled={running}
-            style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "14px", fontFamily: "monospace" }}>
+            style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "14px", fontFamily: "monospace" }}>
             {ASSETS.map(a => <option key={a} value={a}>{a} {allPrices[a] ? `· R$${allPrices[a].price?.toFixed(2)}` : ""}</option>)}
           </select>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "10px" }}>
           {[{ label: "Stop Loss %", val: stopLoss, set: setStopLoss }, { label: "Take Profit %", val: takeProfit, set: setTakeProfit }].map((f, i) => (
             <div key={i}>
-              <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "4px" }}>{f.label}</label>
+              <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "4px" }}>{f.label}</label>
               <input type="number" value={f.val} onChange={e => f.set(e.target.value)} disabled={running} step="0.5"
-                style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "14px", fontFamily: "monospace" }} />
+                style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "14px", fontFamily: "monospace" }} />
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#111a27", borderRadius: "8px", padding: "10px 12px", marginBottom: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: cores.cardInner, borderRadius: "8px", padding: "10px 12px", marginBottom: "10px" }}>
           <div>
-            <div style={{ color: "#888", fontSize: "12px" }}>📧 Notificações por email</div>
-            <div style={{ color: "#444", fontSize: "10px" }}>Avisa quando a IA operar</div>
+            <div style={{ color: cores.textSecondary, fontSize: "12px" }}>📧 Notificações por email</div>
+            <div style={{ color: cores.textFaint, fontSize: "10px" }}>Avisa quando a IA operar</div>
           </div>
           <button onClick={() => setEmailEnabled(e => !e)}
-            style={{ background: emailEnabled ? "#00e5a022" : "#111a27", border: `1px solid ${emailEnabled ? "#00e5a0" : "#1e2d45"}`, color: emailEnabled ? "#00e5a0" : "#555", borderRadius: "6px", padding: "6px 14px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
+            style={{ background: emailEnabled ? "#00e5a022" : cores.cardInner, border: `1px solid ${emailEnabled ? "#00e5a0" : cores.border}`, color: emailEnabled ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "6px 14px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
             {emailEnabled ? "ON ✓" : "OFF"}
           </button>
         </div>
@@ -583,34 +591,34 @@ export default function PaperTrading() {
           {running ? "⏹ PARAR" : "▶ INICIAR PAPER TRADING"}
         </button>
         <button onClick={() => { if (running) return; setCapital(CAPITAL_INICIAL); capitalRef.current = CAPITAL_INICIAL; setPosition(null); positionRef.current = null; setTrades([]); setEquityCurve([{ date: "início", value: CAPITAL_INICIAL }]); setLastAnalysis(null); setStatus("Resetado"); setCountdown(0); }} disabled={running}
-          style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#555", borderRadius: "8px", padding: "10px", fontSize: "13px", cursor: running ? "not-allowed" : "pointer" }}>
+          style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textFaint, borderRadius: "8px", padding: "10px", fontSize: "13px", cursor: running ? "not-allowed" : "pointer" }}>
           🔄 Resetar carteira
         </button>
       </div>
 
       {/* Equity curve */}
       {equityCurve.length > 1 && (
-        <div className="panel">
-          <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>CURVA DE EQUITY</div>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>CURVA DE EQUITY</div>
           <MiniEquity data={equityCurve} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-            <span style={{ color: "#333", fontSize: "10px", fontFamily: "monospace" }}>{fmt(CAPITAL_INICIAL)}</span>
+            <span style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace" }}>{fmt(CAPITAL_INICIAL)}</span>
             <span style={{ color: totalPnlColor, fontSize: "10px", fontFamily: "monospace", fontWeight: "700" }}>{fmt(capital)}</span>
           </div>
         </div>
       )}
 
       {/* Mercado ao vivo */}
-      <div className="panel">
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
           {ASSETS.slice(0, 6).map(a => {
             const p = allPrices[a];
             return (
               <div key={a} onClick={() => !running && setAsset(a)}
-                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: a === asset ? "#00e5a011" : "#111a27", border: `1px solid ${a === asset ? "#00e5a033" : "#1e2d45"}`, borderRadius: "8px", padding: "8px 10px", cursor: "pointer" }}>
-                <span style={{ fontFamily: "monospace", fontSize: "12px", color: a === asset ? "#00e5a0" : "#888", fontWeight: a === asset ? "700" : "400" }}>{a}</span>
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: a === asset ? "#00e5a011" : cores.cardInner, border: `1px solid ${a === asset ? "#00e5a033" : cores.border}`, borderRadius: "8px", padding: "8px 10px", cursor: "pointer" }}>
+                <span style={{ fontFamily: "monospace", fontSize: "12px", color: a === asset ? "#00e5a0" : cores.textSecondary, fontWeight: a === asset ? "700" : "400" }}>{a}</span>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "monospace", fontSize: "11px", color: "#ccc" }}>{p?.price ? `R$${p.price.toFixed(2)}` : "..."}</div>
+                  <div style={{ fontFamily: "monospace", fontSize: "11px", color: cores.textPrimary }}>{p?.price ? `R$${p.price.toFixed(2)}` : "..."}</div>
                   {p?.change !== undefined && <div style={{ fontSize: "10px", color: p.change >= 0 ? "#00e5a0" : "#ff4d6d" }}>{p.change >= 0 ? "+" : ""}{p.change.toFixed(2)}%</div>}
                 </div>
               </div>
@@ -620,26 +628,26 @@ export default function PaperTrading() {
       </div>
 
       {/* Histórico - colapsável */}
-      <div className="panel">
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px" }}>
         <button onClick={() => setShowHistory(h => !h)}
-          style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0, color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>
+          style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0, color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>
           <span>HISTÓRICO {trades.length > 0 && `(${trades.length})`}</span>
           <span>{showHistory ? "▲" : "▼"}</span>
         </button>
         {showHistory && (
           <div style={{ marginTop: "10px", maxHeight: "200px", overflowY: "auto" }}>
             {trades.length === 0 ? (
-              <div style={{ color: "#2a2a2a", textAlign: "center", padding: "20px", fontSize: "12px" }}>Nenhuma operação ainda</div>
+              <div style={{ color: cores.textFaint, textAlign: "center", padding: "20px", fontSize: "12px" }}>Nenhuma operação ainda</div>
             ) : trades.map((t, i) => {
               const c = t.pnl >= 0 ? "#00e5a0" : "#ff4d6d";
               return (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #0d1827" }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${cores.border}` }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ color: t.type === "COMPRA" ? "#00e5a0" : "#ff4d6d", fontSize: "11px", fontWeight: "700" }}>{t.type === "COMPRA" ? "▲" : "▼"} {t.asset}</span>
-                      <span style={{ color: "#333", fontSize: "10px" }}>{t.time}</span>
+                      <span style={{ color: cores.textFaint, fontSize: "10px" }}>{t.time}</span>
                     </div>
-                    <div style={{ color: "#555", fontSize: "10px", marginTop: "2px" }}>{t.reason}</div>
+                    <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>{t.reason}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ color: c, fontSize: "13px", fontWeight: "700", fontFamily: "monospace" }}>{fmt(t.pnl)}</div>
@@ -653,10 +661,10 @@ export default function PaperTrading() {
       </div>
 
       {/* Análise detalhada */}
-      <AnalysisPanel analysis={lastAnalysis} indicators={indicators} countdown={countdown} />
+      <AnalysisPanel analysis={lastAnalysis} indicators={indicators} countdown={countdown} cores={cores} />
 
-      <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #ffd60a22", borderRadius: "10px", marginTop: "12px" }}>
-        <span style={{ color: "#555", fontSize: "11px" }}>
+      <div style={{ marginTop: "12px", padding: "10px 14px", background: cores.card, border: "1px solid #ffd60a22", borderRadius: "10px" }}>
+        <span style={{ color: cores.textSecondary, fontSize: "11px" }}>
           <strong style={{ color: "#ffd60a" }}>⚠️</strong> Capital fictício. Nenhuma ordem real enviada. IA: Groq · Preços: Brapi ⚡
         </span>
       </div>

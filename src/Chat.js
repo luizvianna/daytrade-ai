@@ -1,12 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { montarContextoUsuario, HORIZONTES } from "./ContextoIA";
 import SeletorHorizonte from "./SeletorHorizonte";
+import { authFetch } from "./supabaseClient";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#e0e6f0", textSecondary: "#aaa", textFaint: "#444" };
+}
+
 async function salvarNoHistorico({ ativo, horizonte, recomendacao, score, precoNoMomento, analise }) {
   try {
-    await fetch(`${PROXY}/api/historico`, {
+    await authFetch(`${PROXY}/api/historico`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ativo, origem: "chat", horizonte, recomendacao, score, precoNoMomento, analise }),
@@ -26,9 +34,9 @@ const SUGESTOES = [
   "Minha alocação está adequada para meu perfil?",
 ];
 
-function TypingIndicator() {
+function TypingIndicator({ cores }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "12px 16px", background: "#0d1320", borderRadius: "12px", width: "fit-content", marginBottom: "12px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "12px 16px", background: cores.card, borderRadius: "12px", width: "fit-content", marginBottom: "12px" }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
           width: "7px", height: "7px", borderRadius: "50%", background: "#00e5a0",
@@ -40,7 +48,7 @@ function TypingIndicator() {
   );
 }
 
-function Message({ msg }) {
+function Message({ msg, cores }) {
   const isUser = msg.role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: "12px" }}>
@@ -51,9 +59,9 @@ function Message({ msg }) {
       )}
       <div style={{
         maxWidth: "80%",
-        background: isUser ? "linear-gradient(135deg,#00e5a0,#00b07a)" : "#0d1320",
-        border: isUser ? "none" : "1px solid #1e2d45",
-        color: isUser ? "#000" : "#e0e6f0",
+        background: isUser ? "linear-gradient(135deg,#00e5a0,#00b07a)" : cores.card,
+        border: isUser ? "none" : `1px solid ${cores.border}`,
+        color: isUser ? "#000" : cores.textPrimary,
         borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
         padding: "12px 16px",
         fontSize: "13px",
@@ -67,16 +75,16 @@ function Message({ msg }) {
           </div>
         )}
         {msg.sources && msg.sources.length > 0 && (
-          <div style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: "1px solid #1e2d45" }}>
+          <div style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: `1px solid ${cores.border}` }}>
             <div style={{ color: "#6af", fontSize: "10px", fontFamily: "monospace", marginBottom: "4px" }}>🌐 FONTES PESQUISADAS</div>
             {msg.sources.map((s, i) => (
-              <div key={i} style={{ color: "#555", fontSize: "10px", marginTop: "2px" }}>• {s}</div>
+              <div key={i} style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>• {s}</div>
             ))}
           </div>
         )}
         <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
         {msg.analysis && (
-          <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #1e2d4522" }}>
+          <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: `1px solid ${isUser ? "#00000022" : cores.border}` }}>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {msg.analysis.recomendacao && (
                 <span style={{
@@ -106,12 +114,12 @@ function Message({ msg }) {
             </div>
           </div>
         )}
-        <div style={{ fontSize: "10px", color: isUser ? "#00000066" : "#333", marginTop: "6px", textAlign: "right", fontFamily: "monospace" }}>
+        <div style={{ fontSize: "10px", color: isUser ? "#00000066" : cores.textFaint, marginTop: "6px", textAlign: "right", fontFamily: "monospace" }}>
           {msg.time}
         </div>
       </div>
       {isUser && (
-        <div style={{ width: "30px", height: "30px", background: "#1e2d45", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", marginLeft: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
+        <div style={{ width: "30px", height: "30px", background: cores.border, borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", marginLeft: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
           👤
         </div>
       )}
@@ -119,7 +127,8 @@ function Message({ msg }) {
   );
 }
 
-export default function Chat() {
+export default function Chat({ tema = "escuro" }) {
+  const cores = paleta(tema);
   const [messages, setMessages] = useState([
     {
       id: 1, role: "assistant",
@@ -266,15 +275,15 @@ FORMATO DE RESPOSTA:
       {/* Estilos em public/index.html — não usar <style> aqui (causa removeChild no React 19) */}
 
       {/* Header do chat */}
-      <div style={{ padding: "14px 0", borderBottom: "1px solid #1e2d45", marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ padding: "14px 0", borderBottom: `1px solid ${cores.border}`, marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "2px" }}>💬 Chat com IA de Investimentos</h2>
-          <p style={{ color: "#444", fontSize: "11px" }}>Ações · FIIs · ETFs · Cripto · Renda Fixa · Curto, Médio e Longo Prazo</p>
+          <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "2px", color: cores.textPrimary }}>💬 Chat com IA de Investimentos</h2>
+          <p style={{ color: cores.textFaint, fontSize: "11px" }}>Ações · FIIs · ETFs · Cripto · Renda Fixa · Curto, Médio e Longo Prazo</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: "#555", fontSize: "11px" }}>🌐 Web</span>
+          <span style={{ color: cores.textSecondary, fontSize: "11px" }}>🌐 Web</span>
           <button onClick={() => setWebSearch(w => !w)}
-            style={{ background: webSearch ? "#00e5a022" : "#111a27", border: `1px solid ${webSearch ? "#00e5a0" : "#1e2d45"}`, color: webSearch ? "#00e5a0" : "#555", borderRadius: "6px", padding: "5px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+            style={{ background: webSearch ? "#00e5a022" : cores.cardInner, border: `1px solid ${webSearch ? "#00e5a0" : cores.border}`, color: webSearch ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "5px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
             {webSearch ? "ON ✓" : "OFF"}
           </button>
         </div>
@@ -282,18 +291,18 @@ FORMATO DE RESPOSTA:
 
       {/* Seletor de horizonte */}
       <div style={{ marginBottom: "12px" }}>
-        <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "6px" }}>HORIZONTE DA ANÁLISE (opcional)</div>
+        <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "6px" }}>HORIZONTE DA ANÁLISE (opcional)</div>
         <SeletorHorizonte value={horizonte} onChange={setHorizonte} compact />
       </div>
 
       {/* Sugestões rápidas */}
       {messages.length <= 1 && (
         <div style={{ marginBottom: "14px" }}>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>💡 SUGESTÕES RÁPIDAS</div>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>💡 SUGESTÕES RÁPIDAS</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {SUGESTOES.map((s, i) => (
               <button key={i} className="sugestao" onClick={() => sendMessage(s)}
-                style={{ background: "#0d1320", border: "1px solid #1e2d45", color: "#888", borderRadius: "20px", padding: "6px 12px", fontSize: "11px", cursor: "pointer", transition: "all 0.2s" }}>
+                style={{ background: cores.card, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "20px", padding: "6px 12px", fontSize: "11px", cursor: "pointer", transition: "all 0.2s" }}>
                 {s}
               </button>
             ))}
@@ -303,13 +312,13 @@ FORMATO DE RESPOSTA:
 
       {/* Mensagens */}
       <div style={{ flex: 1, overflowY: "auto", paddingRight: "4px" }}>
-        {messages.map(msg => <Message key={msg.id} msg={msg} />)}
-        {loading && <TypingIndicator />}
+        {messages.map(msg => <Message key={msg.id} msg={msg} cores={cores} />)}
+        {loading && <TypingIndicator cores={cores} />}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div style={{ padding: "12px 0", borderTop: "1px solid #1e2d45" }}>
+      <div style={{ padding: "12px 0", borderTop: `1px solid ${cores.border}` }}>
         <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
           <textarea
             ref={inputRef}
@@ -320,8 +329,8 @@ FORMATO DE RESPOSTA:
             placeholder="Pergunte sobre ações, FIIs, ETFs, cripto, renda fixa, economia..."
             rows={1}
             style={{
-              flex: 1, background: "#0d1320", border: "1px solid #1e2d45",
-              color: "#e0e6f0", borderRadius: "12px", padding: "12px 14px",
+              flex: 1, background: cores.card, border: `1px solid ${cores.border}`,
+              color: cores.textPrimary, borderRadius: "12px", padding: "12px 14px",
               fontSize: "13px", outline: "none", resize: "none",
               fontFamily: "inherit", lineHeight: "1.5", transition: "all 0.2s",
               maxHeight: "120px", overflowY: "auto",
@@ -329,11 +338,11 @@ FORMATO DE RESPOSTA:
             onInput={e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
           />
           <button className="send-btn" onClick={() => sendMessage()} disabled={loading || !input.trim()}
-            style={{ background: loading || !input.trim() ? "#1e2d45" : "linear-gradient(135deg,#00e5a0,#00b07a)", color: loading || !input.trim() ? "#555" : "#000", border: "none", borderRadius: "12px", padding: "12px 16px", fontSize: "18px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s", flexShrink: 0 }}>
+            style={{ background: loading || !input.trim() ? cores.border : "linear-gradient(135deg,#00e5a0,#00b07a)", color: loading || !input.trim() ? cores.textFaint : "#000", border: "none", borderRadius: "12px", padding: "12px 16px", fontSize: "18px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s", flexShrink: 0 }}>
             {loading ? "⏳" : "➤"}
           </button>
         </div>
-        <div style={{ color: "#2a2a2a", fontSize: "10px", textAlign: "center", marginTop: "6px", fontFamily: "monospace" }}>
+        <div style={{ color: cores.textFaint, fontSize: "10px", textAlign: "center", marginTop: "6px", fontFamily: "monospace" }}>
           Enter para enviar · Shift+Enter para nova linha · {webSearch ? "🌐 Pesquisa web ativa" : "Pesquisa web desativada"}
         </div>
       </div>

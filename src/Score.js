@@ -1,8 +1,16 @@
 import { useState, useCallback } from "react";
 import { montarContextoUsuario, HORIZONTES } from "./ContextoIA";
 import SeletorHorizonte from "./SeletorHorizonte";
+import { authFetch } from "./supabaseClient";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
+
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#ccc", textFaint: "#444" };
+}
 
 const ATIVOS_PARA_SCORE = {
   "Ações": ["PETR4","VALE3","ITUB4","BBDC4","WEGE3","ABEV3","RENT3","SUZB3","GGBR4","EMBR3","RADL3","EQTL3","MGLU3","B3SA3","HAPV3"],
@@ -13,7 +21,7 @@ const ATIVOS_PARA_SCORE = {
 
 async function salvarNoHistorico({ ativo, origem, horizonte, recomendacao, score, precoNoMomento, analise }) {
   try {
-    await fetch(`${PROXY}/api/historico`, {
+    await authFetch(`${PROXY}/api/historico`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ativo, origem, horizonte, recomendacao, score, precoNoMomento, analise }),
@@ -21,11 +29,11 @@ async function salvarNoHistorico({ ativo, origem, horizonte, recomendacao, score
   } catch (e) { console.error("Erro ao salvar histórico:", e.message); }
 }
 
-function ScoreBar({ score, size = "normal" }) {
+function ScoreBar({ score, size = "normal", cores }) {
   const color = score >= 7 ? "#00e5a0" : score >= 5 ? "#ffd60a" : "#ff4d6d";
   const h = size === "small" ? "5px" : "8px";
   return (
-    <div style={{ background: "#1e2d45", borderRadius: "4px", overflow: "hidden", height: h }}>
+    <div style={{ background: cores.border, borderRadius: "4px", overflow: "hidden", height: h }}>
       <div style={{ height: "100%", width: `${score * 10}%`, background: color, borderRadius: "4px", transition: "width 0.6s ease" }} />
     </div>
   );
@@ -52,17 +60,17 @@ function RecomendacaoBadge({ rec }) {
   );
 }
 
-function AtivoScoreCard({ item, rank }) {
+function AtivoScoreCard({ item, rank, cores }) {
   const [expanded, setExpanded] = useState(false);
   const color = item.score >= 7 ? "#00e5a0" : item.score >= 5 ? "#ffd60a" : "#ff4d6d";
 
   return (
-    <div style={{ background: "#0d1320", border: `1px solid ${color}33`, borderRadius: "12px", padding: "14px", marginBottom: "8px" }}>
+    <div style={{ background: cores.card, border: `1px solid ${color}33`, borderRadius: "12px", padding: "14px", marginBottom: "8px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
 
         {/* Rank */}
-        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: rank <= 3 ? `${color}22` : "#111a27", border: `1px solid ${rank <= 3 ? color : "#1e2d45"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ color: rank <= 3 ? color : "#555", fontWeight: "700", fontSize: "13px", fontFamily: "monospace" }}>
+        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: rank <= 3 ? `${color}22` : cores.cardInner, border: `1px solid ${rank <= 3 ? color : cores.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{ color: rank <= 3 ? color : cores.textFaint, fontWeight: "700", fontSize: "13px", fontFamily: "monospace" }}>
             {rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : `#${rank}`}
           </span>
         </div>
@@ -70,11 +78,11 @@ function AtivoScoreCard({ item, rank }) {
         {/* Ticker e categoria */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px", flexWrap: "wrap" }}>
-            <span style={{ color: "#fff", fontWeight: "700", fontSize: "15px", fontFamily: "monospace" }}>{item.ticker}</span>
-            <span style={{ color: "#444", fontSize: "10px", background: "#111a27", borderRadius: "4px", padding: "1px 6px" }}>{item.categoria}</span>
+            <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "15px", fontFamily: "monospace" }}>{item.ticker}</span>
+            <span style={{ color: cores.textFaint, fontSize: "10px", background: cores.cardInner, borderRadius: "4px", padding: "1px 6px" }}>{item.categoria}</span>
             {item.recomendacao && <RecomendacaoBadge rec={item.recomendacao} />}
           </div>
-          <ScoreBar score={item.score} />
+          <ScoreBar score={item.score} cores={cores} />
         </div>
 
         {/* Score */}
@@ -83,20 +91,20 @@ function AtivoScoreCard({ item, rank }) {
           <ScoreLabel score={item.score} />
         </div>
 
-        <span style={{ color: "#444", fontSize: "12px" }}>{expanded ? "▲" : "▼"}</span>
+        <span style={{ color: cores.textFaint, fontSize: "12px" }}>{expanded ? "▲" : "▼"}</span>
       </div>
 
       {expanded && item.analise && (
-        <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #1e2d45" }}>
+        <div style={{ marginTop: "14px", paddingTop: "14px", borderTop: `1px solid ${cores.border}` }}>
           {/* Sub-scores */}
           {item.subScores && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px", marginBottom: "12px" }}>
               {Object.entries(item.subScores).map(([k, v]) => (
-                <div key={k} style={{ background: "#111a27", borderRadius: "8px", padding: "8px 10px" }}>
-                  <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{k.toUpperCase()}</div>
+                <div key={k} style={{ background: cores.cardInner, borderRadius: "8px", padding: "8px 10px" }}>
+                  <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{k.toUpperCase()}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ color: v >= 7 ? "#00e5a0" : v >= 5 ? "#ffd60a" : "#ff4d6d", fontWeight: "700", fontSize: "14px", fontFamily: "monospace" }}>{v}/10</span>
-                    <div style={{ flex: 1 }}><ScoreBar score={v} size="small" /></div>
+                    <div style={{ flex: 1 }}><ScoreBar score={v} size="small" cores={cores} /></div>
                   </div>
                 </div>
               ))}
@@ -104,9 +112,9 @@ function AtivoScoreCard({ item, rank }) {
           )}
 
           {/* Análise textual */}
-          <div style={{ background: "#111a27", borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${color}`, marginBottom: "10px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>📊 ANÁLISE DA IA</div>
-            <p style={{ color: "#ccc", fontSize: "12px", lineHeight: "1.7", margin: 0 }}>{item.analise}</p>
+          <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${color}`, marginBottom: "10px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>📊 ANÁLISE DA IA</div>
+            <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.7", margin: 0 }}>{item.analise}</p>
           </div>
 
           {/* Pontos fortes e fracos */}
@@ -115,20 +123,20 @@ function AtivoScoreCard({ item, rank }) {
               {item.pontosFortres?.length > 0 && (
                 <div style={{ background: "#00e5a008", border: "1px solid #00e5a022", borderRadius: "8px", padding: "10px" }}>
                   <div style={{ color: "#00e5a0", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>✅ PONTOS FORTES</div>
-                  {item.pontosFortres.map((p, i) => <div key={i} style={{ color: "#aaa", fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
+                  {item.pontosFortres.map((p, i) => <div key={i} style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
                 </div>
               )}
               {item.pontosFragos?.length > 0 && (
                 <div style={{ background: "#ff4d6d08", border: "1px solid #ff4d6d22", borderRadius: "8px", padding: "10px" }}>
                   <div style={{ color: "#ff4d6d", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>⚠️ RISCOS</div>
-                  {item.pontosFragos.map((p, i) => <div key={i} style={{ color: "#aaa", fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
+                  {item.pontosFragos.map((p, i) => <div key={i} style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
                 </div>
               )}
             </div>
           )}
 
           {item.preco && (
-            <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", marginTop: "8px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginTop: "8px" }}>
               Preço: R${item.preco.toFixed(2)} · Variação: {item.variacao >= 0 ? "+" : ""}{item.variacao?.toFixed(2)}% · Analisado: {item.analisadoEm}
             </div>
           )}
@@ -138,7 +146,8 @@ function AtivoScoreCard({ item, rank }) {
   );
 }
 
-export default function Score() {
+export default function Score({ tema = "escuro" }) {
+  const cores = paleta(tema);
   const [ranking, setRanking] = useState([]);
   const [loading, setLoading] = useState(false);
   const [progresso, setProgresso] = useState(0);
@@ -312,8 +321,8 @@ Responda APENAS JSON:
       {/* Header */}
       <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>⭐ <span style={{ color: "#ffd60a" }}>Score</span> Fundamentalista</h2>
-          <p style={{ color: "#444", fontSize: "12px" }}>IA analisa e pontua todos os ativos de 0 a 10</p>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary }}>⭐ <span style={{ color: "#ffd60a" }}>Score</span> Fundamentalista</h2>
+          <p style={{ color: cores.textFaint, fontSize: "12px" }}>IA analisa e pontua todos os ativos de 0 a 10</p>
         </div>
         <button onClick={analisarAtivos} disabled={loading}
           style={{ background: loading ? "#555" : "linear-gradient(135deg,#ffd60a,#ff9f43)", color: "#000", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "14px", fontWeight: "700", cursor: loading ? "not-allowed" : "pointer" }}>
@@ -323,10 +332,10 @@ Responda APENAS JSON:
 
       {/* Seletor de horizonte */}
       <div style={{ marginBottom: "16px" }}>
-        <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "6px" }}>HORIZONTE DA ANÁLISE (opcional)</div>
+        <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "6px" }}>HORIZONTE DA ANÁLISE (opcional)</div>
         <SeletorHorizonte value={horizonte} onChange={setHorizonte} compact />
         {horizonte && (
-          <div style={{ color: "#555", fontSize: "11px", marginTop: "6px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "6px" }}>
             O score será ponderado considerando {HORIZONTES.find(h => h.id === horizonte)?.label.toLowerCase()}.
           </div>
         )}
@@ -334,13 +343,13 @@ Responda APENAS JSON:
 
       {/* Progresso */}
       {loading && (
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ color: "#00e5a0", fontSize: "12px" }}>{progressoMsg}</span>
-            <span style={{ color: "#444", fontSize: "12px", fontFamily: "monospace" }}>{progresso}%</span>
+            <span style={{ color: cores.textFaint, fontSize: "12px", fontFamily: "monospace" }}>{progresso}%</span>
           </div>
           <div className="prog"><div className="prog-fill" style={{ width: `${progresso}%` }} /></div>
-          <div style={{ color: "#333", fontSize: "10px", marginTop: "8px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "8px" }}>
             ⏱️ Isso pode levar alguns minutos enquanto a IA analisa cada ativo individualmente
           </div>
         </div>
@@ -354,10 +363,10 @@ Responda APENAS JSON:
             { label: "MELHOR ATIVO", value: melhor?.ticker || "—", sub: `Score: ${melhor?.score.toFixed(1) || "—"}`, color: "#00e5a0" },
             { label: "MAIS FRACO", value: piorFiltrado?.ticker || "—", sub: `Score: ${piorFiltrado?.score.toFixed(1) || "—"}`, color: "#ff4d6d" },
           ].map((s, i) => (
-            <div key={i} style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "12px 14px" }}>
-              <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
+            <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+              <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{s.label}</div>
               <div style={{ color: s.color, fontSize: "18px", fontWeight: "700", fontFamily: "monospace" }}>{s.value}</div>
-              <div style={{ color: "#444", fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
+              <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>{s.sub}</div>
             </div>
           ))}
         </div>
@@ -365,10 +374,10 @@ Responda APENAS JSON:
 
       {/* Filtros por categoria */}
       {analisado && (
-        <div style={{ display: "flex", gap: "4px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "4px", marginBottom: "14px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "4px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "4px", marginBottom: "14px", flexWrap: "wrap" }}>
           {["Todos", "Ações", "FIIs", "ETFs", "Cripto"].map(cat => (
             <button key={cat} onClick={() => setCategoriaFiltro(cat)}
-              style={{ flex: 1, minWidth: "60px", background: categoriaFiltro === cat ? "#ffd60a22" : "transparent", border: categoriaFiltro === cat ? "1px solid #ffd60a44" : "1px solid transparent", color: categoriaFiltro === cat ? "#ffd60a" : "#555", borderRadius: "7px", padding: "7px 8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+              style={{ flex: 1, minWidth: "60px", background: categoriaFiltro === cat ? "#ffd60a22" : "transparent", border: categoriaFiltro === cat ? "1px solid #ffd60a44" : "1px solid transparent", color: categoriaFiltro === cat ? "#ffd60a" : cores.textFaint, borderRadius: "7px", padding: "7px 8px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
               {cat} {cat !== "Todos" ? `(${ranking.filter(r => r.categoria === cat).length})` : `(${ranking.length})`}
             </button>
           ))}
@@ -377,20 +386,20 @@ Responda APENAS JSON:
 
       {/* Ranking */}
       {!analisado && !loading && (
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "50px", textAlign: "center" }}>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "50px", textAlign: "center" }}>
           <div style={{ fontSize: "48px", marginBottom: "14px" }}>⭐</div>
-          <div style={{ color: "#444", fontSize: "15px", marginBottom: "8px" }}>Clique em "Analisar Todos" para a IA</div>
-          <div style={{ color: "#333", fontSize: "13px" }}>pontuar todos os {Object.values(ATIVOS_PARA_SCORE).flat().length} ativos de 0 a 10</div>
+          <div style={{ color: cores.textFaint, fontSize: "15px", marginBottom: "8px" }}>Clique em "Analisar Todos" para a IA</div>
+          <div style={{ color: cores.textFaint, fontSize: "13px" }}>pontuar todos os {Object.values(ATIVOS_PARA_SCORE).flat().length} ativos de 0 a 10</div>
         </div>
       )}
 
       {rankingFiltrado.length > 0 && (
         <div>
-          <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>
             RANKING — {rankingFiltrado.length} ATIVOS · Clique para expandir análise
           </div>
           {rankingFiltrado.map((item, i) => (
-            <AtivoScoreCard key={item.ticker} item={item} rank={i + 1} />
+            <AtivoScoreCard key={item.ticker} item={item} rank={i + 1} cores={cores} />
           ))}
         </div>
       )}
@@ -401,8 +410,8 @@ Responda APENAS JSON:
         </div>
       )}
 
-      <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", marginTop: "12px" }}>
-        <span style={{ color: "#444", fontSize: "11px" }}>
+      <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "12px" }}>
+        <span style={{ color: cores.textFaint, fontSize: "11px" }}>
           ⭐ Score baseado em análise técnica + fundamentos + contexto macroeconômico · IA: Groq LLaMA 3.3
         </span>
       </div>

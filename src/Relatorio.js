@@ -14,6 +14,13 @@ const ATIVOS_RELATORIO = [
   "BTC-USD","ETH-USD",
 ];
 
+function paleta(tema) {
+  if (tema === "claro") {
+    return { card: "#FFFFFF", cardInner: "#F4F7FA", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", textFaint: "#94A3B8" };
+  }
+  return { card: "#0d1320", cardInner: "#111a27", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#888", textFaint: "#444" };
+}
+
 function salvarConfig(config) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
 }
@@ -63,17 +70,18 @@ analise: conteudo.analiseCompleta || conteudo.analise || "—",
 function fmt(v) { return v !== undefined ? `R$ ${Number(v).toFixed(2)}` : "—"; }
 function pct(v) { return v !== undefined ? `${v >= 0 ? "+" : ""}${Number(v).toFixed(2)}%` : "—"; }
 
-function StatusCard({ label, value, sub, color = "#fff" }) {
+function StatusCard({ label, value, sub, color = "#fff", cores }) {
   return (
-    <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", padding: "12px 14px" }}>
-      <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{label}</div>
+    <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "12px 14px" }}>
+      <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>{label}</div>
       <div style={{ color, fontSize: "18px", fontWeight: "700" }}>{value}</div>
-      {sub && <div style={{ color: "#444", fontSize: "10px", marginTop: "2px" }}>{sub}</div>}
+      {sub && <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>{sub}</div>}
     </div>
   );
 }
 
-export default function Relatorio() {
+export default function Relatorio({ tema = "escuro" }) {
+  const cores = paleta(tema);
   const [config, setConfig] = useState(carregarConfig);
   const [gerando, setGerando] = useState(false);
   const [progresso, setProgresso] = useState(0);
@@ -276,34 +284,34 @@ Responda em JSON:
 
       {/* Header */}
       <div style={{ marginBottom: "16px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px" }}>📅 <span style={{ color: "#6af" }}>Relatório</span> Semanal</h2>
-        <p style={{ color: "#444", fontSize: "12px" }}>Análise automática enviada por email toda semana</p>
+        <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary }}>📅 <span style={{ color: "#6af" }}>Relatório</span> Semanal</h2>
+        <p style={{ color: cores.textFaint, fontSize: "12px" }}>Análise automática enviada por email toda semana</p>
       </div>
 
       {/* Config */}
-      <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
-        <div style={{ color: "#444", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "14px" }}>⚙️ CONFIGURAÇÃO</div>
+      <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+        <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "14px" }}>⚙️ CONFIGURAÇÃO</div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
           <div>
-            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Dia da semana</label>
+            <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Dia da semana</label>
             <select value={config.diaSemana} onChange={e => atualizarConfig("diaSemana", parseInt(e.target.value))}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "13px" }}>
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "13px" }}>
               {DIAS.map((d, i) => <option key={i} value={i}>{d}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Horário</label>
+            <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Horário</label>
             <input type="time" value={config.hora} onChange={e => atualizarConfig("hora", e.target.value)}
-              style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px", fontSize: "13px" }} />
+              style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px", fontSize: "13px" }} />
           </div>
         </div>
 
         <div style={{ marginBottom: "12px" }}>
-          <label style={{ display: "block", color: "#666", fontSize: "11px", marginBottom: "5px" }}>Seu email</label>
+          <label style={{ display: "block", color: cores.textSecondary, fontSize: "11px", marginBottom: "5px" }}>Seu email</label>
           <input type="email" value={config.email} onChange={e => atualizarConfig("email", e.target.value)}
             placeholder="seu@email.com"
-            style={{ width: "100%", background: "#111a27", border: "1px solid #1e2d45", color: "#e0e6f0", borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
+            style={{ width: "100%", background: cores.cardInner, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "8px", padding: "10px 14px", fontSize: "14px" }} />
         </div>
 
         {/* Toggles */}
@@ -314,10 +322,10 @@ Responda em JSON:
             { campo: "incluirAlertas", label: "🔔 Incluir alertas" },
             { campo: "ativo", label: "⏰ Envio automático" },
           ].map(({ campo, label }) => (
-            <div key={campo} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#111a27", borderRadius: "8px", padding: "8px 12px" }}>
-              <span style={{ color: "#888", fontSize: "12px" }}>{label}</span>
+            <div key={campo} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: cores.cardInner, borderRadius: "8px", padding: "8px 12px" }}>
+              <span style={{ color: cores.textSecondary, fontSize: "12px" }}>{label}</span>
               <button onClick={() => atualizarConfig(campo, !config[campo])}
-                style={{ background: config[campo] ? "#00e5a022" : "#1e2d45", border: `1px solid ${config[campo] ? "#00e5a0" : "#2a3a50"}`, color: config[campo] ? "#00e5a0" : "#555", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+                style={{ background: config[campo] ? "#00e5a022" : cores.border, border: `1px solid ${config[campo] ? "#00e5a0" : cores.border}`, color: config[campo] ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
                 {config[campo] ? "ON" : "OFF"}
               </button>
             </div>
@@ -333,14 +341,14 @@ Responda em JSON:
         )}
 
         {config.ultimoEnvio && (
-          <div style={{ color: "#333", fontSize: "10px", fontFamily: "monospace", marginBottom: "10px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginBottom: "10px" }}>
             Último envio: {config.ultimoEnvio}
           </div>
         )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
           <button onClick={gerarRelatorio} disabled={gerando}
-            style={{ background: gerando ? "#555" : "#111a27", border: "1px solid #1e2d45", color: gerando ? "#888" : "#aaa", borderRadius: "10px", padding: "12px", fontSize: "13px", fontWeight: "700", cursor: gerando ? "not-allowed" : "pointer" }}>
+            style={{ background: gerando ? "#555" : cores.cardInner, border: `1px solid ${cores.border}`, color: gerando ? "#888" : cores.textSecondary, borderRadius: "10px", padding: "12px", fontSize: "13px", fontWeight: "700", cursor: gerando ? "not-allowed" : "pointer" }}>
             {gerando ? "⏳ Gerando..." : "📊 Pré-visualizar"}
           </button>
           <button onClick={() => preview ? enviarEmail(preview) : gerarRelatorio()} disabled={gerando || enviando}
@@ -358,10 +366,10 @@ Responda em JSON:
 
       {/* Progresso */}
       {gerando && (
-        <div style={{ background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "16px", marginBottom: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ color: "#6af", fontSize: "12px" }}>{progressoMsg}</span>
-            <span style={{ color: "#444", fontSize: "12px", fontFamily: "monospace" }}>{progresso}%</span>
+            <span style={{ color: cores.textFaint, fontSize: "12px", fontFamily: "monospace" }}>{progresso}%</span>
           </div>
           <div className="prog"><div className="prog-fill" style={{ width: `${progresso}%` }} /></div>
         </div>
@@ -369,12 +377,12 @@ Responda em JSON:
 
       {/* Preview do relatório */}
       {preview && (
-        <div style={{ background: "#0a0f1a", border: "1px solid #6af33", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: tema === "claro" ? "#F4F7FA" : "#0a0f1a", border: "1px solid #6af33", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div>
               <div style={{ color: "#6af", fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>📊 PRÉVIA DO RELATÓRIO</div>
-              <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#fff" }}>{preview.analise?.titulo || "Relatório Semanal TradeAI"}</h3>
-              <div style={{ color: "#444", fontSize: "11px", marginTop: "2px" }}>{preview.data}</div>
+              <h3 style={{ fontSize: "16px", fontWeight: "700", color: cores.textPrimary }}>{preview.analise?.titulo || "Relatório Semanal TradeAI"}</h3>
+              <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "2px" }}>{preview.data}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ color: sentimentoColor, fontSize: "14px", fontWeight: "700" }}>
@@ -386,19 +394,19 @@ Responda em JSON:
 
           {/* Stats dos ativos */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
-            <StatusCard label="MELHORES DA SEMANA" value={preview.melhores[0]?.ticker || "—"} sub={pct(preview.melhores[0]?.variacao)} color="#00e5a0" />
-            <StatusCard label="PIORES DA SEMANA" value={preview.piores[0]?.ticker || "—"} sub={pct(preview.piores[0]?.variacao)} color="#ff4d6d" />
+            <StatusCard label="MELHORES DA SEMANA" value={preview.melhores[0]?.ticker || "—"} sub={pct(preview.melhores[0]?.variacao)} color="#00e5a0" cores={cores} />
+            <StatusCard label="PIORES DA SEMANA" value={preview.piores[0]?.ticker || "—"} sub={pct(preview.piores[0]?.variacao)} color="#ff4d6d" cores={cores} />
           </div>
 
           {/* Tabela de ativos */}
-          <div style={{ background: "#0d1320", borderRadius: "10px", padding: "14px", marginBottom: "14px" }}>
-            <div style={{ color: "#444", fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>ATIVOS MONITORADOS</div>
+          <div style={{ background: cores.card, borderRadius: "10px", padding: "14px", marginBottom: "14px" }}>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>ATIVOS MONITORADOS</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "6px" }}>
               {preview.ativos.map(a => (
-                <div key={a.ticker} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", background: "#111a27", borderRadius: "6px" }}>
-                  <span style={{ color: "#aaa", fontFamily: "monospace", fontSize: "12px" }}>{a.ticker}</span>
+                <div key={a.ticker} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", background: cores.cardInner, borderRadius: "6px" }}>
+                  <span style={{ color: cores.textSecondary, fontFamily: "monospace", fontSize: "12px" }}>{a.ticker}</span>
                   <div style={{ textAlign: "right" }}>
-                    <span style={{ color: "#ccc", fontFamily: "monospace", fontSize: "11px" }}>{fmt(a.preco)}</span>
+                    <span style={{ color: cores.textPrimary, fontFamily: "monospace", fontSize: "11px" }}>{fmt(a.preco)}</span>
                     <span style={{ color: a.variacao >= 0 ? "#00e5a0" : "#ff4d6d", fontSize: "10px", marginLeft: "6px" }}>{pct(a.variacao)}</span>
                   </div>
                 </div>
@@ -408,24 +416,24 @@ Responda em JSON:
 
           {/* Análise da IA */}
           {preview.analise?.resumoMercado && (
-            <div style={{ background: "#0d1320", borderLeft: "4px solid #6af", borderRadius: "10px", padding: "14px", marginBottom: "12px" }}>
+            <div style={{ background: cores.card, borderLeft: "4px solid #6af", borderRadius: "10px", padding: "14px", marginBottom: "12px" }}>
               <div style={{ color: "#6af", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>📝 RESUMO DO MERCADO</div>
-              <p style={{ color: "#ccc", fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{preview.analise.resumoMercado}</p>
+              <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{preview.analise.resumoMercado}</p>
             </div>
           )}
 
           {preview.analise?.perspectivas && (
-            <div style={{ background: "#0d1320", borderLeft: "4px solid #ffd60a", borderRadius: "10px", padding: "14px", marginBottom: "12px" }}>
+            <div style={{ background: cores.card, borderLeft: "4px solid #ffd60a", borderRadius: "10px", padding: "14px", marginBottom: "12px" }}>
               <div style={{ color: "#ffd60a", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>🔭 PERSPECTIVAS</div>
-              <p style={{ color: "#ccc", fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{preview.analise.perspectivas}</p>
+              <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{preview.analise.perspectivas}</p>
             </div>
           )}
 
           {preview.analise?.recomendacoes?.length > 0 && (
-            <div style={{ background: "#0d1320", borderRadius: "10px", padding: "14px", marginBottom: "12px" }}>
+            <div style={{ background: cores.card, borderRadius: "10px", padding: "14px", marginBottom: "12px" }}>
               <div style={{ color: "#00e5a0", fontSize: "9px", fontFamily: "monospace", marginBottom: "8px" }}>✅ RECOMENDAÇÕES DA SEMANA</div>
               {preview.analise.recomendacoes.map((r, i) => (
-                <div key={i} style={{ color: "#ccc", fontSize: "12px", lineHeight: "1.7", display: "flex", gap: "8px" }}>
+                <div key={i} style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.7", display: "flex", gap: "8px" }}>
                   <span style={{ color: "#00e5a0" }}>{i + 1}.</span> {r}
                 </div>
               ))}
@@ -435,18 +443,17 @@ Responda em JSON:
           {preview.analise?.macroeconomia && (
             <div style={{ background: "#ff4d6d08", border: "1px solid #ff4d6d22", borderRadius: "10px", padding: "14px" }}>
               <div style={{ color: "#ff4d6d", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>⚠️ ALERTAS MACROECONÔMICOS</div>
-              <p style={{ color: "#ccc", fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{preview.analise.macroeconomia}</p>
+              <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.8", margin: 0 }}>{preview.analise.macroeconomia}</p>
             </div>
           )}
         </div>
       )}
 
-      <div style={{ padding: "10px 14px", background: "#0d1320", border: "1px solid #1e2d45", borderRadius: "10px", marginTop: "12px" }}>
-        <span style={{ color: "#444", fontSize: "11px" }}>
+      <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "12px" }}>
+        <span style={{ color: cores.textFaint, fontSize: "11px" }}>
           📅 Relatório automático todo {DIAS[config.diaSemana]} às {config.hora} · EmailJS · IA: Groq LLaMA
         </span>
       </div>
     </div>
   );
 }
-
