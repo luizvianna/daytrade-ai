@@ -226,8 +226,9 @@ export default function Home({ setPage, tema = "escuro" }) {
   const [precos, setPrecos] = useState({});
   const [ordensPendentes, setOrdensPendentes] = useState([]);
   const [diasSeguidos, setDiasSeguidos] = useState(0);
+  const [prefsHome, setPrefsHome] = useState({ mostrarGrafico: true, mostrarAlocacao: true, mostrarTaxas: true });
 
-  // Carrega perfil, conta, ordens pendentes e streak de acesso ao montar
+  // Carrega perfil, conta, ordens pendentes, streak e preferências ao montar
   useEffect(() => {
     carregarPerfil().then(p => setPerfil(p));
     authFetch(`${PROXY}/api/conta`)
@@ -242,6 +243,10 @@ export default function Home({ setPage, tema = "escuro" }) {
     authFetch(`${PROXY}/api/streak`)
       .then(r => r.json())
       .then(data => { if (data.success) setDiasSeguidos(data.data.diasSeguidos || 0); })
+      .catch(() => {});
+    authFetch(`${PROXY}/api/preferencias-home`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setPrefsHome(data.data); })
       .catch(() => {});
   }, []);
 
@@ -367,23 +372,28 @@ export default function Home({ setPage, tema = "escuro" }) {
       )}
 
       {/* Taxas de referência — Selic / CDI / IPCA em destaque */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px", marginBottom: "6px" }}>
-        {[
-          { label: "SELIC", value: `${TAXAS_REFERENCIA.selic.toFixed(2)}%`, color: "#00e5a0" },
-          { label: "CDI", value: `${TAXAS_REFERENCIA.cdi.toFixed(2)}%`, color: "#6af" },
-          { label: "IPCA (12m)", value: `${TAXAS_REFERENCIA.ipca.toFixed(2)}%`, color: "#ffd60a" },
-        ].map((t, i) => (
-          <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "10px", textAlign: "center" }}>
-            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{t.label}</div>
-            <div style={{ color: t.color, fontSize: "16px", fontWeight: "700", fontFamily: "monospace" }}>{t.value}</div>
+      {prefsHome.mostrarTaxas && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px", marginBottom: "6px" }}>
+            {[
+              { label: "SELIC", value: `${TAXAS_REFERENCIA.selic.toFixed(2)}%`, color: "#00e5a0" },
+              { label: "CDI", value: `${TAXAS_REFERENCIA.cdi.toFixed(2)}%`, color: "#6af" },
+              { label: "IPCA (12m)", value: `${TAXAS_REFERENCIA.ipca.toFixed(2)}%`, color: "#ffd60a" },
+            ].map((t, i) => (
+              <div key={i} style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", padding: "10px", textAlign: "center" }}>
+                <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "4px" }}>{t.label}</div>
+                <div style={{ color: t.color, fontSize: "16px", fontWeight: "700", fontFamily: "monospace" }}>{t.value}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginBottom: "14px" }}>
-        Taxas atualizadas em {TAXAS_REFERENCIA.atualizadoEm}
-      </div>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginBottom: "14px" }}>
+            Taxas atualizadas em {TAXAS_REFERENCIA.atualizadoEm}
+          </div>
+        </>
+      )}
 
       {/* Card Investimentos (patrimônio + gráfico) */}
+      {prefsHome.mostrarGrafico && (
       <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "18px", padding: "22px", marginBottom: "14px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
           <span style={{ fontSize: "20px" }}>📊</span>
@@ -447,6 +457,7 @@ export default function Home({ setPage, tema = "escuro" }) {
           </div>
         </div>
       </div>
+      )}
 
       {/* Card Conta Digital */}
       <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "18px", padding: "22px", marginBottom: "14px" }}>
@@ -497,7 +508,7 @@ export default function Home({ setPage, tema = "escuro" }) {
       )}
 
       {/* Comparação: Alocação ideal vs real */}
-      {alocacaoIdeal && (
+      {prefsHome.mostrarAlocacao && alocacaoIdeal && (
         <div style={{ background: desvioAlto ? "#ff9f4311" : cores.card, border: `1px solid ${desvioAlto ? "#ff9f4344" : cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>📊 ALOCAÇÃO: IDEAL vs REAL</span>

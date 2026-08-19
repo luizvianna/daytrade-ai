@@ -239,6 +239,22 @@ function OpcaoButton({ texto, letra, onClick, cores }) {
   );
 }
 
+function ToggleSwitch({ ativo, onToggle, cores }) {
+  return (
+    <button onClick={onToggle}
+      style={{
+        width: "44px", height: "24px", borderRadius: "12px", border: "none", cursor: "pointer",
+        position: "relative", background: ativo ? "#00e5a0" : cores.border,
+        transition: "background 0.2s", padding: 0, flexShrink: 0,
+      }}>
+      <div style={{
+        width: "18px", height: "18px", borderRadius: "50%", background: "#fff",
+        position: "absolute", top: "3px", left: ativo ? "23px" : "3px", transition: "left 0.2s",
+      }} />
+    </button>
+  );
+}
+
 export default function Perfil({ tema, setTema }) {
   const cores = paleta(tema);
   const [etapa, setEtapa] = useState("loading");
@@ -251,6 +267,7 @@ export default function Perfil({ tema, setTema }) {
   const [analisando, setAnalisando] = useState(false);
   const [perfilSalvo, setPerfilSalvo] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [prefsHome, setPrefsHome] = useState({ mostrarGrafico: true, mostrarAlocacao: true, mostrarTaxas: true });
 
   // Carrega perfil do banco ao montar
   useEffect(() => {
@@ -258,7 +275,23 @@ export default function Perfil({ tema, setTema }) {
       setPerfilSalvo(p);
       setEtapa(p ? "ver" : "intro");
     });
+    authFetch(`${PROXY}/api/preferencias-home`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setPrefsHome(data.data); })
+      .catch(() => {});
   }, []);
+
+  const alternarPrefHome = async (chave) => {
+    const novasPrefs = { ...prefsHome, [chave]: !prefsHome[chave] };
+    setPrefsHome(novasPrefs);
+    try {
+      await authFetch(`${PROXY}/api/preferencias-home`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(novasPrefs),
+      });
+    } catch (e) { console.error("Erro ao salvar preferências:", e.message); }
+  };
 
   const responder = (pontos) => {
     const novasRespostas = { ...respostas, [perguntaAtual]: pontos };
@@ -422,6 +455,27 @@ export default function Perfil({ tema, setTema }) {
           <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "10px", lineHeight: "1.5" }}>
             Por enquanto o tema claro afeta apenas o fundo geral do app — as telas internas ainda estão sendo adaptadas.
           </div>
+        </div>
+
+        {/* Personalizar Home */}
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "18px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "4px" }}>PERSONALIZAR HOME</div>
+          <div style={{ color: cores.textFaint, fontSize: "11px", marginBottom: "12px", lineHeight: "1.5" }}>
+            Escolha o que aparece na sua tela inicial.
+          </div>
+          {[
+            { chave: "mostrarGrafico", titulo: "Gráfico de rentabilidade", desc: "Card de patrimônio e gráfico do IBOV" },
+            { chave: "mostrarAlocacao", titulo: "Alocação ideal vs real", desc: "Comparação com seu perfil de investidor" },
+            { chave: "mostrarTaxas", titulo: "Taxas de referência", desc: "Selic, CDI e IPCA em destaque" },
+          ].map((item, i, arr) => (
+            <div key={item.chave} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < arr.length - 1 ? `1px solid ${cores.border}` : "none" }}>
+              <div style={{ paddingRight: "12px" }}>
+                <div style={{ color: cores.textPrimary, fontSize: "13px", fontWeight: "600" }}>{item.titulo}</div>
+                <div style={{ color: cores.textFaint, fontSize: "11px", marginTop: "2px" }}>{item.desc}</div>
+              </div>
+              <ToggleSwitch ativo={prefsHome[item.chave]} onToggle={() => alternarPrefHome(item.chave)} cores={cores} />
+            </div>
+          ))}
         </div>
 
         {/* Termos e segurança */}
