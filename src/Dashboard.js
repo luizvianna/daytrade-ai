@@ -239,7 +239,24 @@ export default function Dashboard({ tema = "escuro" }) {
     finally{setLoadingData(false);}
   },[]);
   const fetchAllPrices=useCallback(async()=>{
-    try{const res=await fetch(`${PROXY}/api/prices?tickers=${TODOS_ATIVOS.slice(0,20).join(",")}`);setAllPrices(await res.json());}catch{}
+    // Busca todos os ativos em lotes de 20 (em vez de truncar nos primeiros 20),
+    // em paralelo, e junta o resultado. Se um lote falhar, os outros continuam
+    // populando normalmente — não derruba a lista inteira por causa de 1 erro.
+    const TAMANHO_LOTE = 20;
+    const lotes = [];
+    for (let i = 0; i < TODOS_ATIVOS.length; i += TAMANHO_LOTE) {
+      lotes.push(TODOS_ATIVOS.slice(i, i + TAMANHO_LOTE));
+    }
+    try {
+      const resultados = await Promise.all(
+        lotes.map(lote =>
+          fetch(`${PROXY}/api/prices?tickers=${lote.join(",")}`)
+            .then(res => res.json())
+            .catch(() => ({}))
+        )
+      );
+      setAllPrices(Object.assign({}, ...resultados));
+    } catch {}
   },[]);
   // Busca os preços de mercado assim que a tela abre — usados na tela de seleção de ativo
   useEffect(()=>{fetchAllPrices();},[fetchAllPrices]);
