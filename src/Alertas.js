@@ -100,21 +100,21 @@ async function sendEmail(params) {
 function fmt(v) { return v !== undefined && v !== null ? `R$ ${Number(v).toFixed(2)}` : "—"; }
 
 // ── Notificação de alerta disparado ──────────────────────────
-function AlertaNotificacao({ alerta, onDismiss }) {
+function AlertaNotificacao({ alerta, onDismiss, cores }) {
   useEffect(() => { const t = setTimeout(onDismiss, 10000); return () => clearTimeout(t); }, [onDismiss]);
   const cor = alerta.tipo === "subiu" ? "#00e5a0" : alerta.tipo === "caiu" ? "#ff4d6d" : "#ffd60a";
   return (
-    <div style={{ position: "fixed", top: "70px", right: "12px", left: "12px", zIndex: 9999, background: "#0d1320", border: `2px solid ${cor}`, borderRadius: "14px", padding: "16px", boxShadow: `0 8px 32px ${cor}44`, maxWidth: "400px", margin: "0 auto" }}>
+    <div style={{ position: "fixed", top: "70px", right: "12px", left: "12px", zIndex: 9999, background: cores.card, border: `2px solid ${cor}`, borderRadius: "14px", padding: "16px", boxShadow: `0 8px 32px ${cor}44`, maxWidth: "400px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ color: cor, fontWeight: "700", fontSize: "14px", marginBottom: "4px" }}>
             {alerta.tipo === "subiu" ? "📈" : alerta.tipo === "caiu" ? "📉" : "🔔"} ALERTA DISPARADO!
           </div>
-          <div style={{ color: "#fff", fontSize: "16px", fontWeight: "700", fontFamily: "monospace" }}>{alerta.ativo}</div>
-          <div style={{ color: "#aaa", fontSize: "13px", marginTop: "4px" }}>{alerta.mensagem}</div>
+          <div style={{ color: cores.textPrimary, fontSize: "16px", fontWeight: "700", fontFamily: "monospace" }}>{alerta.ativo}</div>
+          <div style={{ color: cores.textSecondary, fontSize: "13px", marginTop: "4px" }}>{alerta.mensagem}</div>
           <div style={{ color: cor, fontSize: "18px", fontWeight: "700", fontFamily: "monospace", marginTop: "6px" }}>{fmt(alerta.precoAtual)}</div>
         </div>
-        <button onClick={onDismiss} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: "20px" }}>×</button>
+        <button onClick={onDismiss} style={{ background: "none", border: "none", color: cores.textFaint, cursor: "pointer", fontSize: "20px" }}>×</button>
       </div>
     </div>
   );
@@ -340,7 +340,7 @@ export default function Alertas({ tema = "escuro" }) {
 
   return (
     <div style={{ padding: "14px", maxWidth: "800px", margin: "0 auto" }}>
-      {notificacao && <AlertaNotificacao alerta={notificacao} onDismiss={() => setNotificacao(null)} />}
+      {notificacao && <AlertaNotificacao alerta={notificacao} onDismiss={() => setNotificacao(null)} cores={cores} />}
 
       <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>

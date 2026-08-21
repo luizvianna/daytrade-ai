@@ -180,16 +180,16 @@ function PositionCard({ position, currentPrice, onClose, cores }) {
   );
 }
 
-function SignalAlert({ alert, onDismiss }) {
+function SignalAlert({ alert, onDismiss, cores }) {
   useEffect(() => { const t = setTimeout(onDismiss, 7000); return () => clearTimeout(t); }, [onDismiss]);
   const color = alert.signal === "COMPRA" ? "#00e5a0" : alert.signal === "VENDA" ? "#ff4d6d" : "#ffd60a";
   return (
-    <div style={{ position: "fixed", top: "70px", right: "12px", left: "12px", zIndex: 9999, background: "#0d1320", border: `1px solid ${color}`, borderRadius: "12px", padding: "12px 16px", boxShadow: `0 8px 30px ${color}33` }}>
+    <div style={{ position: "fixed", top: "70px", right: "12px", left: "12px", zIndex: 9999, background: cores.card, border: `1px solid ${color}`, borderRadius: "12px", padding: "12px 16px", boxShadow: `0 8px 30px ${color}33` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
         <span style={{ color, fontWeight: "700", fontSize: "12px", fontFamily: "monospace" }}>{alert.title}</span>
-        <button onClick={onDismiss} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: "18px" }}>×</button>
+        <button onClick={onDismiss} style={{ background: "none", border: "none", color: cores.textFaint, cursor: "pointer", fontSize: "18px" }}>×</button>
       </div>
-      <p style={{ color: "#888", fontSize: "12px", lineHeight: "1.5", margin: 0 }}>{alert.message}</p>
+      <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.5", margin: 0 }}>{alert.message}</p>
     </div>
   );
 }
@@ -496,7 +496,7 @@ export default function PaperTrading({ tema = "escuro" }) {
     <div style={{ padding: "12px", maxWidth: "1200px", margin: "0 auto" }}>
 
 
-      {alert && <SignalAlert alert={alert} onDismiss={() => setAlert(null)} />}
+      {alert && <SignalAlert alert={alert} onDismiss={() => setAlert(null)} cores={cores} />}
 
       {/* Header da página */}
       <div style={{ marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
