@@ -73,7 +73,7 @@ function Badge({ type }) {
 }
 
 // ── Tela de seleção de ativo (busca + categorias) ──────────────────
-function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPrices, onSelecionar, categoriaSelecionada, setCategoriaSelecionada }) {
+function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPrices, onSelecionar, categoriaSelecionada, setCategoriaSelecionada, watchlist, onToggleFavorito }) {
   const ativosCategoriaSelecionada = CATEGORIAS.find(c => c.label === categoriaSelecionada)?.ativos || ACOES;
   const corCategoriaSelecionada = CATEGORIAS.find(c => c.label === categoriaSelecionada)?.cor || "#00e5a0";
 
@@ -105,10 +105,15 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
             const p = allPrices[a];
             const cat = categoriaDoAtivo(a);
             const cor = CATEGORIAS.find(c => c.label === cat)?.cor || "#00e5a0";
+            const favorito = watchlist.includes(a);
             return (
               <div key={a} onClick={() => onSelecionar(a)}
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: i < resultadosBusca.length - 1 ? `1px solid ${cores.border}` : "none", cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <button onClick={(e) => { e.stopPropagation(); onToggleFavorito(a); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", padding: 0, color: favorito ? "#ffd60a" : cores.textFaint }}>
+                    {favorito ? "★" : "☆"}
+                  </button>
                   <span style={{ fontFamily: "monospace", fontSize: "14px", fontWeight: "700", color: cores.textPrimary }}>{a}</span>
                   <span style={{ color: cor, fontSize: "10px", fontFamily: "monospace", background: `${cor}22`, border: `1px solid ${cor}44`, borderRadius: "4px", padding: "2px 6px" }}>{cat}</span>
                 </div>
@@ -132,10 +137,17 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
           <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", overflow: "hidden" }}>
             {ativosCategoriaSelecionada.map((a, i) => {
               const p = allPrices[a];
+              const favorito = watchlist.includes(a);
               return (
                 <div key={a} onClick={() => onSelecionar(a)}
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", borderBottom: i < ativosCategoriaSelecionada.length - 1 ? `1px solid ${cores.border}` : "none", cursor: "pointer" }}>
-                  <span style={{ fontFamily: "monospace", fontSize: "13px", color: cores.textPrimary }}>{a}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <button onClick={(e) => { e.stopPropagation(); onToggleFavorito(a); }}
+                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px", padding: 0, color: favorito ? "#ffd60a" : cores.textFaint }}>
+                      {favorito ? "★" : "☆"}
+                    </button>
+                    <span style={{ fontFamily: "monospace", fontSize: "13px", color: cores.textPrimary }}>{a}</span>
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span style={{ fontFamily: "monospace", fontSize: "12px", color: cores.textSecondary }}>{p?.price ? `R$ ${p.price.toFixed(2)}` : "..."}</span>
                     <span style={{ color: corCategoriaSelecionada, fontSize: "13px" }}>›</span>
@@ -150,7 +162,7 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
   );
 }
 
-export default function Dashboard({ tema = "escuro" }) {
+export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoInicial }) {
   const cores = paleta(tema);
   const isMobile=useIsMobile();
   const { notificar, permissao }=useNotificacoes();
@@ -182,6 +194,7 @@ export default function Dashboard({ tema = "escuro" }) {
   const [orderMsg, setOrderMsg] = useState("");
   const [perfilInvestidor, setPerfilInvestidor] = useState(null);
   const [riscoConfirmado, setRiscoConfirmado] = useState(false);
+  const [watchlist, setWatchlist] = useState([]);
   const candlesRef=useRef([]);
   const priceRef=useRef(null);
   candlesRef.current=candles;
@@ -273,10 +286,44 @@ export default function Dashboard({ tema = "escuro" }) {
       }catch(e){console.error(e);}
     })();
   },[]);
+  // Busca a watchlist (favoritos) do usuário ao montar
+  useEffect(()=>{
+    authFetch(`${PROXY}/api/watchlist`)
+      .then(r=>r.json())
+      .then(data=>{ if(data.success) setWatchlist(data.data); })
+      .catch(()=>{});
+  },[]);
   const selecionarAtivo = (ticker) => {
     setCategoria(categoriaDoAtivo(ticker));
     setAsset(ticker);
     setBusca("");
+  };
+  // Se a Home mandou um ativo específico pra abrir direto (clique num favorito),
+  // seleciona ele assim que a tela monta, e avisa o App.js pra "consumir" esse
+  // valor (senão, ao voltar pra essa tela pelo menu, ela reabriria esse mesmo
+  // ativo pra sempre).
+  useEffect(()=>{
+    if(ativoInicial){
+      selecionarAtivo(ativoInicial);
+      if(limparAtivoInicial) limparAtivoInicial();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[ativoInicial]);
+  const alternarFavorito = async (ticker) => {
+    const jaFavorito = watchlist.includes(ticker);
+    if (jaFavorito) {
+      setWatchlist(prev => prev.filter(t => t !== ticker));
+      try { await authFetch(`${PROXY}/api/watchlist/${ticker}`, { method: "DELETE" }); } catch (e) { console.error(e); }
+    } else {
+      setWatchlist(prev => [...prev, ticker]);
+      try {
+        await authFetch(`${PROXY}/api/watchlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticker }),
+        });
+      } catch (e) { console.error(e); }
+    }
   };
   // Categorias consideradas de maior risco/volatilidade
   const ATIVOS_ALTO_RISCO = new Set([...CRIPTO]);
@@ -350,6 +397,8 @@ export default function Dashboard({ tema = "escuro" }) {
         onSelecionar={selecionarAtivo}
         categoriaSelecionada={categoria}
         setCategoriaSelecionada={setCategoria}
+        watchlist={watchlist}
+        onToggleFavorito={alternarFavorito}
       />
     );
   }
@@ -475,6 +524,10 @@ export default function Dashboard({ tema = "escuro" }) {
                 <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                   <span style={{ color:corCategoria, fontSize:"10px", fontFamily:"monospace", background:`${corCategoria}22`, border:`1px solid ${corCategoria}44`, borderRadius:"4px", padding:"2px 6px" }}>{categoria}</span>
                   <span style={{ color:cores.textFaint, fontSize:"9px", fontFamily:"monospace" }}>{asset}·{INTERVALS.find(i=>i.value===interval)?.label}</span>
+                  <button onClick={()=>alternarFavorito(asset)}
+                    style={{ background:"none", border:"none", cursor:"pointer", fontSize:"15px", padding:0, color: watchlist.includes(asset) ? "#ffd60a" : cores.textFaint }}>
+                    {watchlist.includes(asset) ? "★" : "☆"}
+                  </button>
                 </div>
                 <div style={{ color:priceColor, fontSize:isMobile?"20px":"24px", fontWeight:"700", fontFamily:"monospace", marginTop:"4px" }}>{currentPrice?`R$ ${currentPrice.toFixed(2)}`:"..."}</div>
                 {lastUpdate&&<div style={{ color:cores.textFaint, fontSize:"10px", fontFamily:"monospace" }}>{lastUpdate}</div>}

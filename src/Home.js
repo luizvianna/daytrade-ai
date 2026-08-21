@@ -216,7 +216,7 @@ function EditarContaModal({ conta, onSave, onClose, cores }) {
   );
 }
 
-export default function Home({ setPage, tema = "escuro" }) {
+export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
   const cores = paleta(tema);
 
   const [conta, setConta] = useState(CONTA_DEFAULT);
@@ -225,6 +225,7 @@ export default function Home({ setPage, tema = "escuro" }) {
   const [valoresOcultos, setValoresOcultos] = useState(false);
   const [precos, setPrecos] = useState({});
   const [ordensPendentes, setOrdensPendentes] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
   const [diasSeguidos, setDiasSeguidos] = useState(0);
   const [prefsHome, setPrefsHome] = useState({ mostrarGrafico: true, mostrarAlocacao: true, mostrarTaxas: true });
 
@@ -248,6 +249,10 @@ export default function Home({ setPage, tema = "escuro" }) {
       .then(r => r.json())
       .then(data => { if (data.success) setPrefsHome(data.data); })
       .catch(() => {});
+    authFetch(`${PROXY}/api/watchlist`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setWatchlist(data.data); })
+      .catch(() => {});
   }, []);
 
   // Gráfico de rentabilidade
@@ -259,10 +264,16 @@ export default function Home({ setPage, tema = "escuro" }) {
 
   const fetchPrecos = useCallback(async () => {
     try {
-      const res = await fetch(`${PROXY}/api/prices?tickers=${ATIVOS_RESUMO.join(",")}`);
+      const tickers = [...new Set([...ATIVOS_RESUMO, ...watchlist])];
+      const res = await fetch(`${PROXY}/api/prices?tickers=${tickers.join(",")}`);
       setPrecos(await res.json());
     } catch {}
-  }, []);
+  }, [watchlist]);
+
+  const removerFavorito = async (ticker) => {
+    setWatchlist(prev => prev.filter(t => t !== ticker));
+    try { await authFetch(`${PROXY}/api/watchlist/${ticker}`, { method: "DELETE" }); } catch (e) { console.error(e); }
+  };
 
   const fetchCandlesRentabilidade = useCallback(async (periodoId) => {
     setLoadingChart(true);
@@ -390,6 +401,30 @@ export default function Home({ setPage, tema = "escuro" }) {
             Taxas atualizadas em {TAXAS_REFERENCIA.atualizadoEm}
           </div>
         </>
+      )}
+
+      {/* Favoritos (watchlist) */}
+      {watchlist.length > 0 && (
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>⭐ FAVORITOS</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" }}>
+            {watchlist.map(t => {
+              const p = precos[t];
+              return (
+                <div key={t} onClick={() => onAbrirAtivo && onAbrirAtivo(t)}
+                  style={{ background: cores.cardInner, borderRadius: "10px", padding: "10px", cursor: "pointer", position: "relative" }}>
+                  <button onClick={(e) => { e.stopPropagation(); removerFavorito(t); }}
+                    style={{ position: "absolute", top: "4px", right: "4px", background: "none", border: "none", color: cores.textFaint, fontSize: "13px", cursor: "pointer", padding: "2px", lineHeight: 1 }}>
+                    ×
+                  </button>
+                  <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", marginBottom: "4px" }}>{t}</div>
+                  <div style={{ color: cores.textPrimary, fontSize: "12px", fontFamily: "monospace", fontWeight: "700" }}>{p?.price ? `R$${p.price.toFixed(2)}` : "..."}</div>
+                  {p?.change !== undefined && <div style={{ color: p.change >= 0 ? "#00e5a0" : "#ff4d6d", fontSize: "10px", fontFamily: "monospace" }}>{p.change >= 0 ? "+" : ""}{p.change.toFixed(2)}%</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Card Investimentos (patrimônio + gráfico) */}
