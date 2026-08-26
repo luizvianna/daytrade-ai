@@ -38,6 +38,7 @@ async function carregarAlertasBanco() {
         ativoFlag: a.ativoFlag,
         disparado: a.disparado,
         precoDisparo: a.precoDisparo,
+        origemWatchlist: a.origemWatchlist,
         criadoEm: new Date(a.criadoEm).toLocaleString("pt-BR"),
         disparadoEm: a.disparadoEm ? new Date(a.disparadoEm).toLocaleString("pt-BR") : null,
       }));
@@ -140,6 +141,7 @@ function AlertaCard({ alerta, precoAtual, onDelete, onToggle, cores }) {
             <span style={{ background: `${cor}22`, color: cor, border: `1px solid ${cor}44`, borderRadius: "4px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace", fontWeight: "700" }}>
               {alerta.tipo === "preco_exato" ? "💰 PREÇO EXATO" : alerta.direcao === "sobe" ? "📈 SUBIDA %" : "📉 QUEDA %"}
             </span>
+            {alerta.origemWatchlist && <span style={{ background: "#ffd60a22", color: "#ffd60a", borderRadius: "4px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace" }}>⭐ AUTOMÁTICO</span>}
             {alerta.disparado && <span style={{ background: "#00e5a022", color: "#00e5a0", borderRadius: "4px", padding: "2px 8px", fontSize: "10px", fontFamily: "monospace" }}>✅ DISPARADO</span>}
           </div>
           <div style={{ color: cores.textSecondary, fontSize: "12px" }}>
