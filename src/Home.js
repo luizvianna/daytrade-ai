@@ -82,6 +82,11 @@ function fmtMoney(v) {
   return `R$ ${Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatarQuando(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
 // ── Gráfico de rentabilidade (linha ou candle) — sem <defs> para evitar bug removeChild ──
 function RentabilidadeChart({ candles, tipo, width = 600, height = 200, corLinhaBase }) {
   if (!candles || candles.length < 2) {
@@ -235,6 +240,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
   const [watchlist, setWatchlist] = useState([]);
   const [onboarding, setOnboarding] = useState(null);
   const [onboardingDispensado, setOnboardingDispensado] = useState(true);
+  const [atividade, setAtividade] = useState([]);
   const [diasSeguidos, setDiasSeguidos] = useState(0);
   const [prefsHome, setPrefsHome] = useState({ mostrarGrafico: true, mostrarAlocacao: true, mostrarTaxas: true });
 
@@ -270,6 +276,10 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           setOnboardingDispensado(data.data.dispensado);
         }
       })
+      .catch(() => {});
+    authFetch(`${PROXY}/api/atividade`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setAtividade(data.data); })
       .catch(() => {});
   }, []);
 
@@ -694,6 +704,27 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           </button>
         ))}
       </div>
+
+      {/* Atividade recente */}
+      {atividade.length > 0 && (
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
+          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>🕐 ATIVIDADE RECENTE</div>
+          {atividade.map((ev, i) => {
+            const icone = { ordem: "💰", alerta: "🔔", analise: "🤖", favorito: "⭐", relatorio: "📅" }[ev.categoria] || "•";
+            return (
+              <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < atividade.length - 1 ? `1px solid ${cores.border}` : "none" }}>
+                <span style={{ fontSize: "15px" }}>{icone}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: cores.textPrimary, fontSize: "12px" }}>
+                    {ev.ativo && <strong>{ev.ativo}</strong>}{ev.ativo && " — "}{ev.descricao}
+                  </div>
+                  <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", marginTop: "2px" }}>{formatarQuando(ev.quando)}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px" }}>
         <span style={{ color: cores.textSecondary, fontSize: "11px" }}>
