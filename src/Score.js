@@ -246,19 +246,44 @@ Responda APENAS JSON:
   "horizonte": "curto|médio|longo prazo"
 }`;
 
-        const aiRes = await fetch(`${PROXY}/api/ai/analyze`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            systemPrompt: "Analista de investimentos brasileiro especialista, cobrindo curto, médio e longo prazo. Responda APENAS JSON válido.",
-            prompt,
-          }),
-        });
+        // Chama a IA, com retry real quando bate limite de taxa da Groq —
+        // em vez de desistir do ativo na hora, espera o tempo que a própria
+        // Groq pediu (retryAfterSeconds) e tenta de novo, até 3 vezes.
+        let parsed = null;
+        let tentativas = 0;
+        const MAX_TENTATIVAS = 3;
+        let ultimoErro = null;
 
-        const aiData = await aiRes.json();
-        if (!aiData.success) throw new Error(aiData.error);
+        while (tentativas < MAX_TENTATIVAS && !parsed) {
+          tentativas++;
+          try {
+            const aiRes = await fetch(`${PROXY}/api/ai/analyze`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                systemPrompt: "Analista de investimentos brasileiro especialista, cobrindo curto, médio e longo prazo. Responda APENAS JSON válido.",
+                prompt,
+              }),
+            });
 
-        const parsed = aiData.data;
+            if (aiRes.status === 429) {
+              const aiData429 = await aiRes.json().catch(() => ({}));
+              const esperaMs = (aiData429.retryAfterSeconds || 10) * 1000 + 500;
+              setProgressoMsg(`Limite da IA atingido — aguardando ${Math.round(esperaMs / 1000)}s antes de continuar (${ticker})...`);
+              await new Promise(r => setTimeout(r, esperaMs));
+              continue; // tenta o mesmo ticker de novo
+            }
+
+            const aiData = await aiRes.json();
+            if (!aiData.success) throw new Error(aiData.error || "Erro desconhecido da IA");
+            parsed = aiData.data;
+          } catch (e) {
+            ultimoErro = e;
+          }
+        }
+
+        if (!parsed) throw ultimoErro || new Error("Não foi possível analisar após múltiplas tentativas.");
+
         resultados.push({
           ticker, categoria,
           score: parsed.score || 5,
@@ -291,8 +316,12 @@ Responda APENAS JSON:
         });
       }
 
-      // Pequena pausa para não sobrecarregar
-      await new Promise(r => setTimeout(r, 500));
+      // Pausa entre ativos — aumentada de 500ms pra 1.5s porque o modelo
+      // atual (openai/gpt-oss-120b) tem limite de 8.000 tokens/min na Groq,
+      // menor que o modelo anterior. Isso reduz a chance de bater o limite,
+      // mas o retry acima é quem garante de verdade que o loop não desiste
+      // em cascata se mesmo assim acontecer.
+      await new Promise(r => setTimeout(r, 1500));
     }
 
     // Ordena por score
@@ -412,7 +441,7 @@ Responda APENAS JSON:
 
       <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "12px" }}>
         <span style={{ color: cores.textFaint, fontSize: "11px" }}>
-          ⭐ Score baseado em análise técnica + fundamentos + contexto macroeconômico · IA: Groq LLaMA 3.3
+          ⭐ Score baseado em análise técnica + fundamentos + contexto macroeconômico · IA: Groq
         </span>
       </div>
     </div>
