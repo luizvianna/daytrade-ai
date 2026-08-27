@@ -23,7 +23,7 @@ const TAXAS_REFERENCIA = {
 const ITENS_ONBOARDING = [
   { chave: "perfil", icone: "🧠", label: "Definir seu perfil de investidor", pagina: "perfil" },
   { chave: "favorito", icone: "⭐", label: "Favoritar seu primeiro ativo", pagina: "dashboard" },
-  { chave: "chat", icone: "💬", label: "Fazer uma pergunta no Chat IA", pagina: "chat" },
+  { chave: "chat", icone: "💬", label: "Peça uma análise no Chat IA (ex: \"Analise PETR4\")", pagina: "chat" },
   { chave: "score", icone: "🏆", label: "Ver a pontuação de um ativo", pagina: "score" },
 ];
 
