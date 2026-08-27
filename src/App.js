@@ -12,6 +12,7 @@ import Perfil from "./Perfil";
 import Home from "./Home";
 import Investimentos from "./Investimentos";
 import Sidebar, { MENU_ITEMS } from "./Sidebar";
+import PainelSaude from "./PainelSaude";
 import ConfigNotificacoes, { useNotificacoes, registrarSW } from "./Notificacoes";
 import { supabase } from "./supabaseClient";
 
@@ -31,10 +32,10 @@ function getPageInfo(pageId) {
   return { label: "TradeAI", icon: "⚡" };
 }
 
-function PageContent({ page, setPage, isAdmin, tema, setTema }) {
+function PageContent({ page, setPage, isAdmin, tema, setTema, ativoInicial, limparAtivoInicial, onAbrirAtivo }) {
   switch (page) {
-    case "home":         return <Home setPage={setPage} tema={tema} />;
-    case "dashboard":    return <Dashboard tema={tema} />;
+    case "home":         return <Home setPage={setPage} tema={tema} onAbrirAtivo={onAbrirAtivo} />;
+    case "dashboard":    return <Dashboard tema={tema} ativoInicial={ativoInicial} limparAtivoInicial={limparAtivoInicial} />;
     case "investimentos":return <Investimentos setPage={setPage} tema={tema} />;
     case "chat":         return <Chat tema={tema} />;
     case "score":        return <Score tema={tema} />;
@@ -44,6 +45,7 @@ function PageContent({ page, setPage, isAdmin, tema, setTema }) {
     case "backtesting":  return <Backtesting tema={tema} />;
     case "papertrading": return <PaperTrading tema={tema} />;
     case "perfil":       return <Perfil tema={tema} setTema={setTema} />;
+    case "saudesistema":  return <PainelSaude tema={tema} />;
     default:             return <Home setPage={setPage} />;
   }
 }
@@ -56,6 +58,11 @@ export default function App() {
   const [proxyWaking, setProxyWaking] = useState(false);
   const [showNotifConfig, setShowNotifConfig] = useState(false);
   const [tema, setTema] = useState(() => localStorage.getItem("tradeai_tema") || "escuro");
+  const [ativoInicial, setAtivoInicial] = useState(null);
+  const abrirAtivoNoDashboard = (ticker) => {
+    setAtivoInicial(ticker);
+    setPage("dashboard");
+  };
   const isMobile = useIsMobile();
   const { permissao } = useNotificacoes();
 
@@ -200,7 +207,7 @@ export default function App() {
       )}
 
       {/* ── Conteúdo da página ── */}
-      <PageContent key={page} page={page} setPage={setPage} isAdmin={isAdmin} tema={tema} setTema={setTema} />
+      <PageContent key={page} page={page} setPage={setPage} isAdmin={isAdmin} tema={tema} setTema={setTema} ativoInicial={ativoInicial} limparAtivoInicial={() => setAtivoInicial(null)} onAbrirAtivo={abrirAtivoNoDashboard} />
     </div>
   );
 }

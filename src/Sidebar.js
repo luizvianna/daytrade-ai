@@ -18,6 +18,9 @@ export const MENU_ITEMS = [
     { id: "papertrading", label: "Paper Trading", icon: "🏦" },
     { id: "perfil", label: "Meu Perfil", icon: "👤" },
   ]},
+  { section: "ADMIN", items: [
+    { id: "saudesistema", label: "Painel de Saúde", icon: "🩺", somenteAdmin: true },
+  ]},
 ];
 
 // Itens visíveis só pra quem é admin (day trade / paper trading)
@@ -34,9 +37,17 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout, isAdmi
     ? { bg: "#FFFFFF", border: "#E2E8F0", textPrimary: "#172033", textSecondary: "#64748B", itemBg: "#F4F7FA" }
     : { bg: "#0a0f1a", border: "#1e2d45", textPrimary: "#fff", textSecondary: "#999", itemBg: "#111a27" };
 
-  // Remove os itens admin-only do menu quando isAdmin não é true,
-  // e some com a seção inteira se ela ficar vazia
-  const menuFiltrado = MENU_ITEMS;
+  // Filtro novo e isolado: só esconde itens marcados explicitamente com
+  // somenteAdmin=true (hoje, só o Painel de Saúde). Não mexe no
+  // ITENS_ADMIN_APENAS acima, que já existia e nunca foi ativado — deixado
+  // como estava, pra não mudar o comportamento de Negociar/Paper Trading
+  // sem isso ter sido pedido.
+  const menuFiltrado = MENU_ITEMS
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => !item.somenteAdmin || isAdmin),
+    }))
+    .filter(section => section.items.length > 0);
 
   return (
     <>
