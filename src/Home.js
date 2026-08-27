@@ -20,6 +20,13 @@ const TAXAS_REFERENCIA = {
   atualizadoEm: "09/06/2026",
 };
 
+const ITENS_ONBOARDING = [
+  { chave: "perfil", icone: "🧠", label: "Definir seu perfil de investidor", pagina: "perfil" },
+  { chave: "favorito", icone: "⭐", label: "Favoritar seu primeiro ativo", pagina: "dashboard" },
+  { chave: "chat", icone: "💬", label: "Fazer uma pergunta no Chat IA", pagina: "chat" },
+  { chave: "score", icone: "🏆", label: "Ver a pontuação de um ativo", pagina: "score" },
+];
+
 const PERIODOS = [
   { id: "1d",  label: "1D", range: "1d",  interval: "5m"  },
   { id: "1s",  label: "1S", range: "5d",  interval: "30m" },
@@ -226,6 +233,8 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
   const [precos, setPrecos] = useState({});
   const [ordensPendentes, setOrdensPendentes] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
+  const [onboarding, setOnboarding] = useState(null);
+  const [onboardingDispensado, setOnboardingDispensado] = useState(true);
   const [diasSeguidos, setDiasSeguidos] = useState(0);
   const [prefsHome, setPrefsHome] = useState({ mostrarGrafico: true, mostrarAlocacao: true, mostrarTaxas: true });
 
@@ -253,6 +262,15 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       .then(r => r.json())
       .then(data => { if (data.success) setWatchlist(data.data); })
       .catch(() => {});
+    authFetch(`${PROXY}/api/onboarding`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setOnboarding(data.data.passos);
+          setOnboardingDispensado(data.data.dispensado);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Gráfico de rentabilidade
@@ -273,6 +291,11 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
   const removerFavorito = async (ticker) => {
     setWatchlist(prev => prev.filter(t => t !== ticker));
     try { await authFetch(`${PROXY}/api/watchlist/${ticker}`, { method: "DELETE" }); } catch (e) { console.error(e); }
+  };
+
+  const dispensarOnboarding = async () => {
+    setOnboardingDispensado(true);
+    try { await authFetch(`${PROXY}/api/onboarding/dispensar`, { method: "POST" }); } catch (e) { console.error(e); }
   };
 
   const fetchCandlesRentabilidade = useCallback(async (periodoId) => {
@@ -340,6 +363,10 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
   const rentColor = rentabilidade === null ? "#888" : rentabilidade >= 0 ? "#00e5a0" : "#ff4d6d";
   const corLinhaBase = tema === "claro" ? "#00000022" : "#ffffff22";
 
+  const passosCompletos = onboarding ? Object.values(onboarding).filter(Boolean).length : 0;
+  const onboardingCompleto = onboarding && passosCompletos === ITENS_ONBOARDING.length;
+  const mostrarOnboarding = onboarding && !onboardingDispensado && !onboardingCompleto;
+
   return (
     <div style={{ padding: "14px", maxWidth: "700px", margin: "0 auto" }}>
       {showEditModal && <EditarContaModal conta={conta} onSave={salvarContaInfo} onClose={() => setShowEditModal(false)} cores={cores} />}
@@ -379,6 +406,30 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
             </span>
           </div>
           <span style={{ color: "#ffd60a", fontSize: "12px" }}>Ver →</span>
+        </div>
+      )}
+
+      {/* Checklist de primeiros passos */}
+      {mostrarOnboarding && (
+        <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>🚀 PRIMEIROS PASSOS · {passosCompletos}/{ITENS_ONBOARDING.length}</span>
+            <button onClick={dispensarOnboarding}
+              style={{ background: "none", border: "none", color: cores.textFaint, fontSize: "16px", cursor: "pointer", padding: "2px", lineHeight: 1 }}>
+              ×
+            </button>
+          </div>
+          {ITENS_ONBOARDING.map(item => {
+            const feito = !!onboarding[item.chave];
+            return (
+              <div key={item.chave} onClick={() => !feito && setPage(item.pagina)}
+                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", cursor: feito ? "default" : "pointer", opacity: feito ? 0.55 : 1 }}>
+                <span style={{ fontSize: "16px" }}>{feito ? "✅" : item.icone}</span>
+                <span style={{ color: cores.textPrimary, fontSize: "13px", textDecoration: feito ? "line-through" : "none", flex: 1 }}>{item.label}</span>
+                {!feito && <span style={{ color: "#00e5a0", fontSize: "12px" }}>Ir →</span>}
+              </div>
+            );
+          })}
         </div>
       )}
 
