@@ -15,6 +15,8 @@ import Sidebar, { MENU_ITEMS } from "./Sidebar";
 import PainelSaude from "./PainelSaude";
 import ConfigNotificacoes, { useNotificacoes, registrarSW } from "./Notificacoes";
 import { supabase } from "./supabaseClient";
+import { Zap } from "lucide-react";
+
 
 const PROXY = "https://daytrade-proxy.onrender.com";
 
@@ -29,7 +31,7 @@ function getPageInfo(pageId) {
     const found = section.items.find(i => i.id === pageId);
     if (found) return found;
   }
-  return { label: "TradeAI", icon: "⚡" };
+    return { label: "TradeAI", icon: Zap };
 }
 
 function PageContent({ page, setPage, isAdmin, tema, setTema, ativoInicial, limparAtivoInicial, onAbrirAtivo }) {
@@ -167,7 +169,7 @@ export default function App() {
             </div>
           ) : (
             <div key="header-page" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "18px" }}>{pageInfo.icon}</span>
+                            {pageInfo.icon && <pageInfo.icon size={18} strokeWidth={2.25} />}
               <span style={{ fontWeight: "700", fontSize: "15px" }}>{pageInfo.label}</span>
             </div>
           )}

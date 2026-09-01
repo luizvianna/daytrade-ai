@@ -1,25 +1,35 @@
 import { useEffect } from "react";
+import {
+  Home, LineChart, Briefcase, MessageCircle, Star, History,
+  Bell, Calendar, BarChart3, Landmark, User, Activity,
+  X, LogOut,
+} from "lucide-react";
+
+// Traço um pouco mais grosso que o padrão do Lucide (2px) — reforça a
+// identidade de "terminal de trading" que os números em monospace do app
+// já sugerem, em vez da linha fina que a maioria dos dashboards usa.
+const ICON_STROKE = 2.25;
 
 export const MENU_ITEMS = [
   { section: "PRINCIPAL", items: [
-    { id: "home", label: "Home", icon: "🏠" },
-    { id: "dashboard", label: "Negociar", icon: "📈" },
-    { id: "investimentos", label: "Investimentos", icon: "💼" },
+    { id: "home", label: "Home", icon: Home },
+    { id: "dashboard", label: "Negociar", icon: LineChart },
+    { id: "investimentos", label: "Investimentos", icon: Briefcase },
   ]},
   { section: "INTELIGÊNCIA ARTIFICIAL", items: [
-    { id: "chat", label: "Bate-papo IA", icon: "💬" },
-    { id: "score", label: "Pontuação", icon: "⭐" },
-    { id: "historico", label: "Histórico", icon: "📋" },
-    { id: "alertas", label: "Alertas", icon: "🔔" },
-    { id: "relatorio", label: "Relatório", icon: "📅" },
+    { id: "chat", label: "Bate-papo IA", icon: MessageCircle },
+    { id: "score", label: "Pontuação", icon: Star },
+    { id: "historico", label: "Histórico", icon: History },
+    { id: "alertas", label: "Alertas", icon: Bell },
+    { id: "relatorio", label: "Relatório", icon: Calendar },
   ]},
   { section: "FERRAMENTAS", items: [
-    { id: "backtesting", label: "Teste retrospectivo", icon: "📊" },
-    { id: "papertrading", label: "Paper Trading", icon: "🏦" },
-    { id: "perfil", label: "Meu Perfil", icon: "👤" },
+    { id: "backtesting", label: "Teste retrospectivo", icon: BarChart3 },
+    { id: "papertrading", label: "Paper Trading", icon: Landmark },
+    { id: "perfil", label: "Meu Perfil", icon: User },
   ]},
   { section: "ADMIN", items: [
-    { id: "saudesistema", label: "Painel de Saúde", icon: "🩺", somenteAdmin: true },
+    { id: "saudesistema", label: "Painel de Saúde", icon: Activity, somenteAdmin: true },
   ]},
 ];
 
@@ -81,8 +91,8 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout, isAdmi
             </div>
           </div>
           <button onClick={onClose}
-            style={{ background: cores.itemBg, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "8px", width: "32px", height: "32px", fontSize: "16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            ×
+            style={{ background: cores.itemBg, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={16} strokeWidth={ICON_STROKE} />
           </button>
         </div>
 
@@ -95,6 +105,7 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout, isAdmi
               </div>
               {section.items.map(item => {
                 const ativo = page === item.id;
+                const Icone = item.icon;
                 return (
                   <button key={item.id} className="sidebar-item" onClick={() => { setPage(item.id); onClose(); }}
                     style={{
@@ -106,7 +117,9 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout, isAdmi
                       fontSize: "14px", fontWeight: ativo ? "700" : "500", cursor: "pointer",
                       fontFamily: "inherit", textAlign: "left", transition: "all 0.15s",
                     }}>
-                    <span style={{ fontSize: "18px", width: "22px", textAlign: "center" }}>{item.icon}</span>
+                    <span style={{ width: "22px", display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                      <Icone size={18} strokeWidth={ICON_STROKE} />
+                    </span>
                     {item.label}
                   </button>
                 );
@@ -119,7 +132,7 @@ export default function Sidebar({ open, onClose, page, setPage, onLogout, isAdmi
         <div style={{ padding: "14px 16px", borderTop: `1px solid ${cores.border}` }}>
           <button onClick={onLogout}
             style={{ width: "100%", background: "#ff4d6d15", border: "1px solid #ff4d6d33", color: "#ff4d6d", borderRadius: "10px", padding: "11px", fontSize: "13px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-            🔒 Sair da conta
+            <LogOut size={16} strokeWidth={ICON_STROKE} /> Sair da conta
           </button>
           <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", textAlign: "center", marginTop: "10px" }}>
             v2.0 · Dados: Brapi ⚡
