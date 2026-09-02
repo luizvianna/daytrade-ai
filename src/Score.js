@@ -2,8 +2,13 @@ import { useState, useCallback } from "react";
 import { montarContextoUsuario, HORIZONTES } from "./ContextoIA";
 import SeletorHorizonte from "./SeletorHorizonte";
 import { authFetch } from "./supabaseClient";
+import {
+  Star, RefreshCw, Play, Loader2, Clock, Award,
+  CheckCircle2, AlertTriangle, XCircle, Brain,
+} from "lucide-react";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
+const ICON_STROKE = 2.25;
 
 function paleta(tema) {
   if (tema === "claro") {
@@ -40,10 +45,10 @@ function ScoreBar({ score, size = "normal", cores }) {
 }
 
 function ScoreLabel({ score }) {
-  if (score >= 8) return <span style={{ color: "#00e5a0", fontSize: "10px", fontFamily: "monospace", fontWeight: "700" }}>⭐ EXCELENTE</span>;
-  if (score >= 6) return <span style={{ color: "#00e5a0", fontSize: "10px", fontFamily: "monospace" }}>✅ BOM</span>;
-  if (score >= 4) return <span style={{ color: "#ffd60a", fontSize: "10px", fontFamily: "monospace" }}>⚠️ NEUTRO</span>;
-  return <span style={{ color: "#ff4d6d", fontSize: "10px", fontFamily: "monospace" }}>❌ FRACO</span>;
+  if (score >= 8) return <span style={{ color: "#00e5a0", fontSize: "10px", fontFamily: "monospace", fontWeight: "700", display: "inline-flex", alignItems: "center", gap: "3px" }}><Star size={11} strokeWidth={ICON_STROKE} /> EXCELENTE</span>;
+  if (score >= 6) return <span style={{ color: "#00e5a0", fontSize: "10px", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "3px" }}><CheckCircle2 size={11} strokeWidth={ICON_STROKE} /> BOM</span>;
+  if (score >= 4) return <span style={{ color: "#ffd60a", fontSize: "10px", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "3px" }}><AlertTriangle size={11} strokeWidth={ICON_STROKE} /> NEUTRO</span>;
+  return <span style={{ color: "#ff4d6d", fontSize: "10px", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "3px" }}><XCircle size={11} strokeWidth={ICON_STROKE} /> FRACO</span>;
 }
 
 function RecomendacaoBadge({ rec }) {
@@ -63,16 +68,17 @@ function RecomendacaoBadge({ rec }) {
 function AtivoScoreCard({ item, rank, cores }) {
   const [expanded, setExpanded] = useState(false);
   const color = item.score >= 7 ? "#00e5a0" : item.score >= 5 ? "#ffd60a" : "#ff4d6d";
+  const corMedalha = rank === 1 ? "#ffd60a" : rank === 2 ? "#c0c0c0" : rank === 3 ? "#cd7f32" : null;
 
   return (
     <div style={{ background: cores.card, border: `1px solid ${color}33`, borderRadius: "12px", padding: "14px", marginBottom: "8px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }} onClick={() => setExpanded(e => !e)}>
 
         {/* Rank */}
-        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: rank <= 3 ? `${color}22` : cores.cardInner, border: `1px solid ${rank <= 3 ? color : cores.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ color: rank <= 3 ? color : cores.textFaint, fontWeight: "700", fontSize: "13px", fontFamily: "monospace" }}>
-            {rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : `#${rank}`}
-          </span>
+        <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: corMedalha ? `${corMedalha}22` : cores.cardInner, border: `1px solid ${corMedalha || cores.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          {corMedalha
+            ? <Award size={16} strokeWidth={ICON_STROKE} color={corMedalha} />
+            : <span style={{ color: cores.textFaint, fontWeight: "700", fontSize: "13px", fontFamily: "monospace" }}>#{rank}</span>}
         </div>
 
         {/* Ticker e categoria */}
@@ -113,7 +119,9 @@ function AtivoScoreCard({ item, rank, cores }) {
 
           {/* Análise textual */}
           <div style={{ background: cores.cardInner, borderRadius: "8px", padding: "12px", borderLeft: `3px solid ${color}`, marginBottom: "10px" }}>
-            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>📊 ANÁLISE DA IA</div>
+            <div style={{ color: cores.textFaint, fontSize: "9px", fontFamily: "monospace", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Brain size={12} strokeWidth={ICON_STROKE} /> ANÁLISE DA IA
+            </div>
             <p style={{ color: cores.textSecondary, fontSize: "12px", lineHeight: "1.7", margin: 0 }}>{item.analise}</p>
           </div>
 
@@ -122,13 +130,17 @@ function AtivoScoreCard({ item, rank, cores }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               {item.pontosFortres?.length > 0 && (
                 <div style={{ background: "#00e5a008", border: "1px solid #00e5a022", borderRadius: "8px", padding: "10px" }}>
-                  <div style={{ color: "#00e5a0", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>✅ PONTOS FORTES</div>
+                  <div style={{ color: "#00e5a0", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <CheckCircle2 size={12} strokeWidth={ICON_STROKE} /> PONTOS FORTES
+                  </div>
                   {item.pontosFortres.map((p, i) => <div key={i} style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
                 </div>
               )}
               {item.pontosFragos?.length > 0 && (
                 <div style={{ background: "#ff4d6d08", border: "1px solid #ff4d6d22", borderRadius: "8px", padding: "10px" }}>
-                  <div style={{ color: "#ff4d6d", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px" }}>⚠️ RISCOS</div>
+                  <div style={{ color: "#ff4d6d", fontSize: "9px", fontFamily: "monospace", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <AlertTriangle size={12} strokeWidth={ICON_STROKE} /> RISCOS
+                  </div>
                   {item.pontosFragos.map((p, i) => <div key={i} style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.6" }}>• {p}</div>)}
                 </div>
               )}
@@ -316,11 +328,9 @@ Responda APENAS JSON:
         });
       }
 
-      // Pausa entre ativos — aumentada de 500ms pra 1.5s porque o modelo
-      // atual (openai/gpt-oss-120b) tem limite de 8.000 tokens/min na Groq,
-      // menor que o modelo anterior. Isso reduz a chance de bater o limite,
-      // mas o retry acima é quem garante de verdade que o loop não desiste
-      // em cascata se mesmo assim acontecer.
+      // Pausa entre ativos — 1.5s, porque o modelo atual (openai/gpt-oss-120b)
+      // tem limite de 8.000 tokens/min na Groq. O retry acima é quem garante
+      // de verdade que o loop não desiste em cascata se ainda assim acontecer.
       await new Promise(r => setTimeout(r, 1500));
     }
 
@@ -350,12 +360,18 @@ Responda APENAS JSON:
       {/* Header */}
       <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary }}>⭐ <span style={{ color: "#ffd60a" }}>Score</span> Fundamentalista</h2>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary, display: "flex", alignItems: "center", gap: "8px" }}>
+            <Star size={20} strokeWidth={ICON_STROKE} color="#ffd60a" /> Score Fundamentalista
+          </h2>
           <p style={{ color: cores.textFaint, fontSize: "12px" }}>IA analisa e pontua todos os ativos de 0 a 10</p>
         </div>
         <button onClick={analisarAtivos} disabled={loading}
-          style={{ background: loading ? "#555" : "linear-gradient(135deg,#ffd60a,#ff9f43)", color: "#000", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "14px", fontWeight: "700", cursor: loading ? "not-allowed" : "pointer" }}>
-          {loading ? "⏳ Analisando..." : analisado ? "🔄 Reanalisar" : "▶ Analisar Todos"}
+          style={{ background: loading ? "#555" : "linear-gradient(135deg,#ffd60a,#ff9f43)", color: "#000", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "14px", fontWeight: "700", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+          {loading
+            ? <><Loader2 size={16} strokeWidth={ICON_STROKE} className="spin" /> Analisando...</>
+            : analisado
+              ? <><RefreshCw size={16} strokeWidth={ICON_STROKE} /> Reanalisar</>
+              : <><Play size={16} strokeWidth={ICON_STROKE} /> Analisar Todos</>}
         </button>
       </div>
 
@@ -378,8 +394,8 @@ Responda APENAS JSON:
             <span style={{ color: cores.textFaint, fontSize: "12px", fontFamily: "monospace" }}>{progresso}%</span>
           </div>
           <div className="prog"><div className="prog-fill" style={{ width: `${progresso}%` }} /></div>
-          <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "8px" }}>
-            ⏱️ Isso pode levar alguns minutos enquanto a IA analisa cada ativo individualmente
+          <div style={{ color: cores.textFaint, fontSize: "10px", marginTop: "8px", display: "flex", alignItems: "center", gap: "5px" }}>
+            <Clock size={11} strokeWidth={ICON_STROKE} /> Isso pode levar alguns minutos enquanto a IA analisa cada ativo individualmente
           </div>
         </div>
       )}
@@ -416,7 +432,7 @@ Responda APENAS JSON:
       {/* Ranking */}
       {!analisado && !loading && (
         <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "50px", textAlign: "center" }}>
-          <div style={{ fontSize: "48px", marginBottom: "14px" }}>⭐</div>
+          <Star size={44} strokeWidth={ICON_STROKE} color="#ffd60a" style={{ marginBottom: "14px" }} />
           <div style={{ color: cores.textFaint, fontSize: "15px", marginBottom: "8px" }}>Clique em "Analisar Todos" para a IA</div>
           <div style={{ color: cores.textFaint, fontSize: "13px" }}>pontuar todos os {Object.values(ATIVOS_PARA_SCORE).flat().length} ativos de 0 a 10</div>
         </div>
@@ -434,14 +450,16 @@ Responda APENAS JSON:
       )}
 
       {erros.length > 0 && (
-        <div style={{ background: "#ff4d6d11", border: "1px solid #ff4d6d33", borderRadius: "10px", padding: "10px 14px", marginTop: "10px" }}>
-          <span style={{ color: "#ff4d6d", fontSize: "11px" }}>⚠️ Erro ao analisar: {erros.join(", ")}</span>
+        <div style={{ background: "#ff4d6d11", border: "1px solid #ff4d6d33", borderRadius: "10px", padding: "10px 14px", marginTop: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+          <AlertTriangle size={13} strokeWidth={ICON_STROKE} color="#ff4d6d" />
+          <span style={{ color: "#ff4d6d", fontSize: "11px" }}>Erro ao analisar: {erros.join(", ")}</span>
         </div>
       )}
 
-      <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "12px" }}>
+      <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px", marginTop: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+        <Star size={13} strokeWidth={ICON_STROKE} color={cores.textFaint} />
         <span style={{ color: cores.textFaint, fontSize: "11px" }}>
-          ⭐ Score baseado em análise técnica + fundamentos + contexto macroeconômico · IA: Groq
+          Score baseado em análise técnica + fundamentos + contexto macroeconômico · IA: Groq
         </span>
       </div>
     </div>

@@ -2,8 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { montarContextoUsuario, HORIZONTES } from "./ContextoIA";
 import SeletorHorizonte from "./SeletorHorizonte";
 import { authFetch } from "./supabaseClient";
+import { MessageCircle, Globe, Bot, User, AlertTriangle, Calendar, Star, Loader2, Send } from "lucide-react";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
+const ICON_STROKE = 2.25;
 
 function paleta(tema) {
   if (tema === "claro") {
@@ -53,8 +55,8 @@ function Message({ msg, cores }) {
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: "12px" }}>
       {!isUser && (
-        <div style={{ width: "30px", height: "30px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", marginRight: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
-          🤖
+        <div style={{ width: "30px", height: "30px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", marginRight: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
+          <Bot size={16} strokeWidth={ICON_STROKE} color="#000" />
         </div>
       )}
       <div style={{
@@ -76,7 +78,9 @@ function Message({ msg, cores }) {
         )}
         {msg.sources && msg.sources.length > 0 && (
           <div style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: `1px solid ${cores.border}` }}>
-            <div style={{ color: "#6af", fontSize: "10px", fontFamily: "monospace", marginBottom: "4px" }}>🌐 FONTES PESQUISADAS</div>
+            <div style={{ color: "#6af", fontSize: "10px", fontFamily: "monospace", marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <Globe size={11} strokeWidth={ICON_STROKE} /> FONTES PESQUISADAS
+            </div>
             {msg.sources.map((s, i) => (
               <div key={i} style={{ color: cores.textFaint, fontSize: "10px", marginTop: "2px" }}>• {s}</div>
             ))}
@@ -97,18 +101,18 @@ function Message({ msg, cores }) {
                 </span>
               )}
               {msg.analysis.risco && (
-                <span style={{ background: "#ff4d6d11", color: "#ff4d6d", border: "1px solid #ff4d6d33", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontFamily: "monospace" }}>
-                  ⚠️ Risco: {msg.analysis.risco}
+                <span style={{ background: "#ff4d6d11", color: "#ff4d6d", border: "1px solid #ff4d6d33", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <AlertTriangle size={11} strokeWidth={ICON_STROKE} /> Risco: {msg.analysis.risco}
                 </span>
               )}
               {msg.analysis.horizonte && (
-                <span style={{ background: "#6af11", color: "#6af", border: "1px solid #6af33", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontFamily: "monospace" }}>
-                  📅 {msg.analysis.horizonte}
+                <span style={{ background: "#6af11", color: "#6af", border: "1px solid #6af33", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <Calendar size={11} strokeWidth={ICON_STROKE} /> {msg.analysis.horizonte}
                 </span>
               )}
               {msg.analysis.score !== undefined && (
-                <span style={{ background: "#ffd60a11", color: "#ffd60a", border: "1px solid #ffd60a33", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontFamily: "monospace" }}>
-                  ⭐ Score: {msg.analysis.score}/10
+                <span style={{ background: "#ffd60a11", color: "#ffd60a", border: "1px solid #ffd60a33", borderRadius: "6px", padding: "3px 10px", fontSize: "11px", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <Star size={11} strokeWidth={ICON_STROKE} /> Score: {msg.analysis.score}/10
                 </span>
               )}
             </div>
@@ -119,8 +123,8 @@ function Message({ msg, cores }) {
         </div>
       </div>
       {isUser && (
-        <div style={{ width: "30px", height: "30px", background: cores.border, borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", marginLeft: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
-          👤
+        <div style={{ width: "30px", height: "30px", background: cores.border, borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
+          <User size={16} strokeWidth={ICON_STROKE} color={cores.textPrimary} />
         </div>
       )}
     </div>
@@ -257,7 +261,7 @@ FORMATO DE RESPOSTA:
     } catch (e) {
       setMessages(prev => [...prev, {
         id: Date.now() + 1, role: "assistant",
-        content: `❌ Erro: ${e.message}\n\nTente novamente em alguns instantes.`,
+        content: `Erro: ${e.message}\n\nTente novamente em alguns instantes.`,
         time: new Date().toLocaleTimeString("pt-BR"),
       }]);
     } finally {
@@ -277,11 +281,15 @@ FORMATO DE RESPOSTA:
       {/* Header do chat */}
       <div style={{ padding: "14px 0", borderBottom: `1px solid ${cores.border}`, marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "2px", color: cores.textPrimary }}>💬 Chat com IA de Investimentos</h2>
+          <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "2px", color: cores.textPrimary, display: "flex", alignItems: "center", gap: "8px" }}>
+            <MessageCircle size={17} strokeWidth={ICON_STROKE} color="#00e5a0" /> Chat com IA de Investimentos
+          </h2>
           <p style={{ color: cores.textFaint, fontSize: "11px" }}>Ações · FIIs · ETFs · Cripto · Renda Fixa · Curto, Médio e Longo Prazo</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ color: cores.textSecondary, fontSize: "11px" }}>🌐 Web</span>
+          <span style={{ color: cores.textSecondary, fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}>
+            <Globe size={12} strokeWidth={ICON_STROKE} /> Web
+          </span>
           <button onClick={() => setWebSearch(w => !w)}
             style={{ background: webSearch ? "#00e5a022" : cores.cardInner, border: `1px solid ${webSearch ? "#00e5a0" : cores.border}`, color: webSearch ? "#00e5a0" : cores.textFaint, borderRadius: "6px", padding: "5px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
             {webSearch ? "ON ✓" : "OFF"}
@@ -298,7 +306,7 @@ FORMATO DE RESPOSTA:
       {/* Sugestões rápidas */}
       {messages.length <= 1 && (
         <div style={{ marginBottom: "14px" }}>
-          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>💡 SUGESTÕES RÁPIDAS</div>
+          <div style={{ color: cores.textFaint, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "8px" }}>SUGESTÕES RÁPIDAS</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {SUGESTOES.map((s, i) => (
               <button key={i} className="sugestao" onClick={() => sendMessage(s)}
@@ -338,12 +346,12 @@ FORMATO DE RESPOSTA:
             onInput={e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
           />
           <button className="send-btn" onClick={() => sendMessage()} disabled={loading || !input.trim()}
-            style={{ background: loading || !input.trim() ? cores.border : "linear-gradient(135deg,#00e5a0,#00b07a)", color: loading || !input.trim() ? cores.textFaint : "#000", border: "none", borderRadius: "12px", padding: "12px 16px", fontSize: "18px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s", flexShrink: 0 }}>
-            {loading ? "⏳" : "➤"}
+            style={{ background: loading || !input.trim() ? cores.border : "linear-gradient(135deg,#00e5a0,#00b07a)", color: loading || !input.trim() ? cores.textFaint : "#000", border: "none", borderRadius: "12px", padding: "12px 16px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {loading ? <Loader2 size={18} strokeWidth={ICON_STROKE} className="spin" /> : <Send size={18} strokeWidth={ICON_STROKE} />}
           </button>
         </div>
         <div style={{ color: cores.textFaint, fontSize: "10px", textAlign: "center", marginTop: "6px", fontFamily: "monospace" }}>
-          Enter para enviar · Shift+Enter para nova linha · {webSearch ? "🌐 Pesquisa web ativa" : "Pesquisa web desativada"}
+          Enter para enviar · Shift+Enter para nova linha · {webSearch ? "Pesquisa web ativa" : "Pesquisa web desativada"}
         </div>
       </div>
     </div>
