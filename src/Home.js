@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { carregarPerfil } from "./Perfil";
 import { authFetch } from "./supabaseClient";
+import {
+  Brain, Star, MessageCircle, Trophy, Flame, Eye, EyeOff, Clock,
+  Rocket, CheckCircle2, BarChart3, LineChart, CandlestickChart,
+  RefreshCw, Wallet, Pencil, Plug, Shield, Scale, Zap, AlertTriangle,
+  Briefcase, Bell, Calendar, History, Bot, Save, X,
+} from "lucide-react";
 
 const PROXY = "https://daytrade-proxy.onrender.com";
+const ICON_STROKE = 2.25;
 
 const ATIVOS_RESUMO = ["PETR4","VALE3","ITUB4","HGLG11","IVVB11","BTC-USD"];
 
@@ -21,10 +28,10 @@ const TAXAS_REFERENCIA = {
 };
 
 const ITENS_ONBOARDING = [
-  { chave: "perfil", icone: "🧠", label: "Definir seu perfil de investidor", pagina: "perfil" },
-  { chave: "favorito", icone: "⭐", label: "Favoritar seu primeiro ativo", pagina: "dashboard" },
-  { chave: "chat", icone: "💬", label: "Peça uma análise no Chat IA (ex: \"Analise PETR4\")", pagina: "chat" },
-  { chave: "score", icone: "🏆", label: "Ver a pontuação de um ativo", pagina: "score" },
+  { chave: "perfil", icone: Brain, label: "Definir seu perfil de investidor", pagina: "perfil" },
+  { chave: "favorito", icone: Star, label: "Favoritar seu primeiro ativo", pagina: "dashboard" },
+  { chave: "chat", icone: MessageCircle, label: "Peça uma análise no Chat IA (ex: \"Analise PETR4\")", pagina: "chat" },
+  { chave: "score", icone: Trophy, label: "Ver a pontuação de um ativo", pagina: "score" },
 ];
 
 const PERIODOS = [
@@ -37,6 +44,8 @@ const PERIODOS = [
 ];
 
 const CONTA_DEFAULT = { saldoConta: 0, valorInvestido: 0, lancamentosFuturos: 0, conectado: false, corretora: "", valorRendaFixa: 0, valorRendaVariavel: 0 };
+
+const ICONES_ATIVIDADE = { ordem: Wallet, alerta: Bell, analise: Bot, favorito: Star, relatorio: Calendar };
 
 // Paleta por tema — cores de destaque (verde, vermelho, amarelo, azul) ficam
 // iguais nos dois temas, só o que muda é fundo/card/borda/texto estrutural
@@ -177,13 +186,16 @@ function EditarContaModal({ conta, onSave, onClose, cores }) {
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "16px", padding: "22px", maxWidth: "380px", width: "100%" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h3 style={{ fontSize: "15px", fontWeight: "700", color: cores.textPrimary }}>💰 Atualizar Saldos</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: cores.textSecondary, cursor: "pointer", fontSize: "20px" }}>×</button>
+          <h3 style={{ fontSize: "15px", fontWeight: "700", color: cores.textPrimary, display: "flex", alignItems: "center", gap: "8px" }}>
+            <Wallet size={16} strokeWidth={ICON_STROKE} /> Atualizar Saldos
+          </h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: cores.textSecondary, cursor: "pointer", display: "flex" }}><X size={18} strokeWidth={ICON_STROKE} /></button>
         </div>
 
-        <div style={{ background: "#6af11", border: "1px solid #6af33", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px" }}>
+        <div style={{ background: "#6af11", border: "1px solid #6af33", borderRadius: "8px", padding: "10px 12px", marginBottom: "16px", display: "flex", gap: "8px" }}>
+          <Plug size={14} strokeWidth={ICON_STROKE} color="#6af" style={{ flexShrink: 0, marginTop: "2px" }} />
           <div style={{ color: "#6af", fontSize: "11px", lineHeight: "1.6" }}>
-            🔌 Em breve: conexão automática via Open Finance com sua corretora. Por agora, atualize manualmente.
+            Em breve: conexão automática via Open Finance com sua corretora. Por agora, atualize manualmente.
           </div>
         </div>
 
@@ -208,7 +220,9 @@ function EditarContaModal({ conta, onSave, onClose, cores }) {
         </div>
 
         <div style={{ background: "#00e5a008", border: "1px solid #00e5a022", borderRadius: "10px", padding: "12px", marginBottom: "18px" }}>
-          <div style={{ color: "#00e5a0", fontSize: "11px", fontWeight: "700", marginBottom: "10px" }}>📊 Para comparar com seu perfil ideal (opcional)</div>
+          <div style={{ color: "#00e5a0", fontSize: "11px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <BarChart3 size={13} strokeWidth={ICON_STROKE} /> Para comparar com seu perfil ideal (opcional)
+          </div>
           <div style={{ marginBottom: "10px" }}>
             <label style={labelStyle}>Quanto está em Renda Fixa (Tesouro, CDB, LCI...)</label>
             <input type="number" value={valorRendaFixa} onChange={e => setValorRendaFixa(e.target.value)} placeholder="0,00" style={inputStyle} />
@@ -220,8 +234,8 @@ function EditarContaModal({ conta, onSave, onClose, cores }) {
         </div>
 
         <button onClick={salvar}
-          style={{ width: "100%", background: "linear-gradient(135deg,#00e5a0,#00b07a)", color: "#000", border: "none", borderRadius: "10px", padding: "13px", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>
-          💾 Salvar
+          style={{ width: "100%", background: "linear-gradient(135deg,#00e5a0,#00b07a)", color: "#000", border: "none", borderRadius: "10px", padding: "13px", fontSize: "14px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          <Save size={16} strokeWidth={ICON_STROKE} /> Salvar
         </button>
       </div>
     </div>
@@ -349,10 +363,10 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
   const patrimonioTotal = (conta.saldoConta || 0) + (conta.valorInvestido || 0);
 
   const perfilInfo = perfil ? {
-    conservador: { nome: "Conservador", icone: "🛡️", cor: "#6af" },
-    moderado: { nome: "Moderado", icone: "⚖️", cor: "#ffd60a" },
-    arrojado: { nome: "Arrojado", icone: "🚀", cor: "#00e5a0" },
-    agressivo: { nome: "Agressivo", icone: "⚡", cor: "#ff9f43" },
+    conservador: { nome: "Conservador", icone: Shield, cor: "#6af" },
+    moderado: { nome: "Moderado", icone: Scale, cor: "#ffd60a" },
+    arrojado: { nome: "Arrojado", icone: Rocket, cor: "#00e5a0" },
+    agressivo: { nome: "Agressivo", icone: Zap, cor: "#ff9f43" },
   }[perfil.tipoPerfil] : null;
 
   // ── Comparação alocação ideal (do perfil) vs real (Renda Fixa / Variável) ──
@@ -392,16 +406,16 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "16px" }}>{perfil?.nome || "Investidor"}</span>
               {diasSeguidos > 1 && (
-                <span style={{ background: "#ff9f4322", border: "1px solid #ff9f4344", color: "#ff9f43", borderRadius: "20px", padding: "2px 8px", fontSize: "11px", fontWeight: "700", fontFamily: "monospace" }}>
-                  🔥 {diasSeguidos}
+                <span style={{ background: "#ff9f4322", border: "1px solid #ff9f4344", color: "#ff9f43", borderRadius: "20px", padding: "2px 8px", fontSize: "11px", fontWeight: "700", fontFamily: "monospace", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                  <Flame size={11} strokeWidth={ICON_STROKE} /> {diasSeguidos}
                 </span>
               )}
             </div>
           </div>
         </div>
         <button onClick={() => setValoresOcultos(v => !v)}
-          style={{ background: cores.card, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "10px", width: "38px", height: "38px", fontSize: "16px", cursor: "pointer" }}>
-          {valoresOcultos ? "🙈" : "👁️"}
+          style={{ background: cores.card, border: `1px solid ${cores.border}`, color: cores.textSecondary, borderRadius: "10px", width: "38px", height: "38px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {valoresOcultos ? <EyeOff size={17} strokeWidth={ICON_STROKE} /> : <Eye size={17} strokeWidth={ICON_STROKE} />}
         </button>
       </div>
 
@@ -410,7 +424,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
         <div onClick={() => setPage("historico")}
           style={{ background: "#ffd60a11", border: "1px solid #ffd60a33", borderRadius: "12px", padding: "12px 16px", marginBottom: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "18px" }}>⏳</span>
+            <Clock size={18} strokeWidth={ICON_STROKE} color="#ffd60a" />
             <span style={{ color: "#ffd60a", fontSize: "13px" }}>
               Você tem <strong>{ordensPendentes.length}</strong> {ordensPendentes.length === 1 ? "ordem pendente" : "ordens pendentes"}
             </span>
@@ -423,18 +437,21 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {mostrarOnboarding && (
         <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>🚀 PRIMEIROS PASSOS · {passosCompletos}/{ITENS_ONBOARDING.length}</span>
+            <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+              <Rocket size={12} strokeWidth={ICON_STROKE} /> PRIMEIROS PASSOS · {passosCompletos}/{ITENS_ONBOARDING.length}
+            </span>
             <button onClick={dispensarOnboarding}
-              style={{ background: "none", border: "none", color: cores.textFaint, fontSize: "16px", cursor: "pointer", padding: "2px", lineHeight: 1 }}>
-              ×
+              style={{ background: "none", border: "none", color: cores.textFaint, cursor: "pointer", padding: "2px", display: "flex" }}>
+              <X size={15} strokeWidth={ICON_STROKE} />
             </button>
           </div>
           {ITENS_ONBOARDING.map(item => {
             const feito = !!onboarding[item.chave];
+            const Icone = item.icone;
             return (
               <div key={item.chave} onClick={() => !feito && setPage(item.pagina)}
                 style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", cursor: feito ? "default" : "pointer", opacity: feito ? 0.55 : 1 }}>
-                <span style={{ fontSize: "16px" }}>{feito ? "✅" : item.icone}</span>
+                {feito ? <CheckCircle2 size={16} strokeWidth={ICON_STROKE} color="#00e5a0" /> : <Icone size={16} strokeWidth={ICON_STROKE} color={cores.textSecondary} />}
                 <span style={{ color: cores.textPrimary, fontSize: "13px", textDecoration: feito ? "line-through" : "none", flex: 1 }}>{item.label}</span>
                 {!feito && <span style={{ color: "#00e5a0", fontSize: "12px" }}>Ir →</span>}
               </div>
@@ -467,7 +484,9 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {/* Favoritos (watchlist) */}
       {watchlist.length > 0 && (
         <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
-          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px" }}>⭐ FAVORITOS</div>
+          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "10px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+            <Star size={12} strokeWidth={ICON_STROKE} /> FAVORITOS
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" }}>
             {watchlist.map(t => {
               const p = precos[t];
@@ -475,8 +494,8 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
                 <div key={t} onClick={() => onAbrirAtivo && onAbrirAtivo(t)}
                   style={{ background: cores.cardInner, borderRadius: "10px", padding: "10px", cursor: "pointer", position: "relative" }}>
                   <button onClick={(e) => { e.stopPropagation(); removerFavorito(t); }}
-                    style={{ position: "absolute", top: "4px", right: "4px", background: "none", border: "none", color: cores.textFaint, fontSize: "13px", cursor: "pointer", padding: "2px", lineHeight: 1 }}>
-                    ×
+                    style={{ position: "absolute", top: "4px", right: "4px", background: "none", border: "none", color: cores.textFaint, cursor: "pointer", padding: "2px", display: "flex" }}>
+                    <X size={12} strokeWidth={ICON_STROKE} />
                   </button>
                   <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", marginBottom: "4px" }}>{t}</div>
                   <div style={{ color: cores.textPrimary, fontSize: "12px", fontFamily: "monospace", fontWeight: "700" }}>{p?.price ? `R$${p.price.toFixed(2)}` : "..."}</div>
@@ -492,7 +511,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {prefsHome.mostrarGrafico && (
       <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "18px", padding: "22px", marginBottom: "14px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-          <span style={{ fontSize: "20px" }}>📊</span>
+          <BarChart3 size={20} strokeWidth={ICON_STROKE} color={cores.textPrimary} />
           <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "15px" }}>Investimentos</span>
         </div>
 
@@ -516,12 +535,12 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           {/* Toggle linha/candle */}
           <div style={{ display: "flex", gap: "4px", background: cores.cardInner, borderRadius: "8px", padding: "3px" }}>
             <button onClick={() => setTipoGrafico("linha")}
-              style={{ background: tipoGrafico === "linha" ? "#6af22" : "transparent", border: tipoGrafico === "linha" ? "1px solid #6af44" : "1px solid transparent", color: tipoGrafico === "linha" ? "#6af" : cores.textSecondary, borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
-              📈 Linha
+              style={{ background: tipoGrafico === "linha" ? "#6af22" : "transparent", border: tipoGrafico === "linha" ? "1px solid #6af44" : "1px solid transparent", color: tipoGrafico === "linha" ? "#6af" : cores.textSecondary, borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+              <LineChart size={12} strokeWidth={ICON_STROKE} /> Linha
             </button>
             <button onClick={() => setTipoGrafico("candle")}
-              style={{ background: tipoGrafico === "candle" ? "#6af22" : "transparent", border: tipoGrafico === "candle" ? "1px solid #6af44" : "1px solid transparent", color: tipoGrafico === "candle" ? "#6af" : cores.textSecondary, borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
-              🕯️ Candle
+              style={{ background: tipoGrafico === "candle" ? "#6af22" : "transparent", border: tipoGrafico === "candle" ? "1px solid #6af44" : "1px solid transparent", color: tipoGrafico === "candle" ? "#6af" : cores.textSecondary, borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+              <CandlestickChart size={12} strokeWidth={ICON_STROKE} /> Candle
             </button>
           </div>
         </div>
@@ -534,7 +553,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
               {rentabilidade >= 0 ? "+" : ""}{rentabilidade.toFixed(2)}%
             </span>
           )}
-          {loadingChart && <span style={{ color: cores.textSecondary, fontSize: "11px" }}>🔄</span>}
+          {loadingChart && <RefreshCw size={12} strokeWidth={ICON_STROKE} color={cores.textSecondary} className="spin" />}
         </div>
 
         {/* Gráfico */}
@@ -559,12 +578,12 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "18px", padding: "22px", marginBottom: "14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "20px" }}>💵</span>
+            <Wallet size={20} strokeWidth={ICON_STROKE} color={cores.textPrimary} />
             <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "15px" }}>Conta Digital</span>
           </div>
           <button onClick={() => setShowEditModal(true)}
-            style={{ background: "#00e5a015", border: "1px solid #00e5a033", color: "#00e5a0", borderRadius: "8px", padding: "6px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
-            ✏️ Editar
+            style={{ background: "#00e5a015", border: "1px solid #00e5a033", color: "#00e5a0", borderRadius: "8px", padding: "6px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
+            <Pencil size={11} strokeWidth={ICON_STROKE} /> Editar
           </button>
         </div>
         <div>
@@ -572,8 +591,9 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           <div style={{ color: cores.textPrimary, fontSize: "20px", fontWeight: "700", fontFamily: "monospace" }}>{oculto(fmtMoney(conta.saldoConta))}</div>
         </div>
         {!conta.conectado && (
-          <div style={{ marginTop: "14px", background: "#6af11", border: "1px solid #6af33", borderRadius: "8px", padding: "8px 12px" }}>
-            <span style={{ color: "#6af", fontSize: "11px" }}>🔌 Conecte sua corretora via Open Finance (em breve)</span>
+          <div style={{ marginTop: "14px", background: "#6af11", border: "1px solid #6af33", borderRadius: "8px", padding: "8px 12px", display: "flex", gap: "6px" }}>
+            <Plug size={13} strokeWidth={ICON_STROKE} color="#6af" style={{ flexShrink: 0, marginTop: "1px" }} />
+            <span style={{ color: "#6af", fontSize: "11px" }}>Conecte sua corretora via Open Finance (em breve)</span>
           </div>
         )}
       </div>
@@ -582,7 +602,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {perfilInfo ? (
         <div onClick={() => setPage("perfil")} style={{ background: `${perfilInfo.cor}11`, border: `1px solid ${perfilInfo.cor}33`, borderRadius: "14px", padding: "16px", marginBottom: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "28px" }}>{perfilInfo.icone}</span>
+            <perfilInfo.icone size={26} strokeWidth={ICON_STROKE} color={perfilInfo.cor} />
             <div>
               <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace" }}>SEU PERFIL</div>
               <div style={{ color: perfilInfo.cor, fontWeight: "700", fontSize: "15px" }}>{perfilInfo.nome}</div>
@@ -593,7 +613,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       ) : (
         <div onClick={() => setPage("perfil")} style={{ background: "#ffd60a11", border: "1px solid #ffd60a33", borderRadius: "14px", padding: "16px", marginBottom: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "28px" }}>🧠</span>
+            <Brain size={26} strokeWidth={ICON_STROKE} color="#ffd60a" />
             <div>
               <div style={{ color: "#ffd60a", fontWeight: "700", fontSize: "14px" }}>Defina seu perfil de investidor</div>
               <div style={{ color: cores.textSecondary, fontSize: "11px" }}>Receba recomendações personalizadas</div>
@@ -607,7 +627,9 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {prefsHome.mostrarAlocacao && alocacaoIdeal && (
         <div style={{ background: desvioAlto ? "#ff9f4311" : cores.card, border: `1px solid ${desvioAlto ? "#ff9f4344" : cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>📊 ALOCAÇÃO: IDEAL vs REAL</span>
+            <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+              <BarChart3 size={12} strokeWidth={ICON_STROKE} /> ALOCAÇÃO: IDEAL vs REAL
+            </span>
             <button onClick={() => setShowEditModal(true)}
               style={{ background: "none", border: "none", color: "#00e5a0", fontSize: "11px", cursor: "pointer" }}>
               {totalAlocadoReal > 0 ? "Editar →" : "Informar valores →"}
@@ -621,9 +643,10 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           ) : (
             <>
               {desvioAlto && (
-                <div style={{ background: "#ff9f4322", borderRadius: "8px", padding: "8px 12px", marginBottom: "12px" }}>
+                <div style={{ background: "#ff9f4322", borderRadius: "8px", padding: "8px 12px", marginBottom: "12px", display: "flex", gap: "6px" }}>
+                  <AlertTriangle size={13} strokeWidth={ICON_STROKE} color="#ff9f43" style={{ flexShrink: 0, marginTop: "1px" }} />
                   <span style={{ color: "#ff9f43", fontSize: "12px" }}>
-                    ⚠️ Sua carteira está desviada {desvioPct.toFixed(0)} pontos da alocação ideal. Considere rebalancear.
+                    Sua carteira está desviada {desvioPct.toFixed(0)} pontos da alocação ideal. Considere rebalancear.
                   </span>
                 </div>
               )}
@@ -656,13 +679,13 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
         <button onClick={() => setPage("dashboard")}
           style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "18px", textAlign: "left", cursor: "pointer" }}>
-          <div style={{ fontSize: "26px", marginBottom: "8px" }}>📈</div>
+          <LineChart size={24} strokeWidth={ICON_STROKE} color="#00e5a0" style={{ marginBottom: "8px" }} />
           <div style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "14px", marginBottom: "4px" }}>Negociar</div>
           <div style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.5" }}>Daytrade · Ações, FIIs, ETFs, Cripto em tempo real</div>
         </button>
         <button onClick={() => setPage("investimentos")}
           style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "18px", textAlign: "left", cursor: "pointer" }}>
-          <div style={{ fontSize: "26px", marginBottom: "8px" }}>💼</div>
+          <Briefcase size={24} strokeWidth={ICON_STROKE} color="#6af" style={{ marginBottom: "8px" }} />
           <div style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "14px", marginBottom: "4px" }}>Investimentos</div>
           <div style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.5" }}>Renda Fixa, Tesouro, COE, Previdência</div>
         </button>
@@ -671,7 +694,9 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {/* Mercado resumo */}
       <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-          <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>MERCADO AGORA ⚡</span>
+          <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+            MERCADO AGORA <Zap size={11} strokeWidth={ICON_STROKE} />
+          </span>
           <button onClick={() => setPage("dashboard")} style={{ background: "none", border: "none", color: "#00e5a0", fontSize: "11px", cursor: "pointer" }}>Ver tudo →</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" }}>
@@ -692,14 +717,14 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       <div style={{ marginBottom: "8px", color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em" }}>FERRAMENTAS IA</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px", marginBottom: "14px" }}>
         {[
-          { id: "chat", icone: "💬", label: "Chat IA" },
-          { id: "score", icone: "⭐", label: "Pontuação" },
-          { id: "alertas", icone: "🔔", label: "Alertas" },
-          { id: "relatorio", icone: "📅", label: "Relatório" },
+          { id: "chat", icone: MessageCircle, label: "Chat IA" },
+          { id: "score", icone: Star, label: "Pontuação" },
+          { id: "alertas", icone: Bell, label: "Alertas" },
+          { id: "relatorio", icone: Calendar, label: "Relatório" },
         ].map(item => (
           <button key={item.id} onClick={() => setPage(item.id)}
             style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "12px", padding: "14px 8px", textAlign: "center", cursor: "pointer" }}>
-            <div style={{ fontSize: "22px", marginBottom: "6px" }}>{item.icone}</div>
+            <item.icone size={20} strokeWidth={ICON_STROKE} color={cores.textSecondary} style={{ marginBottom: "6px" }} />
             <div style={{ color: cores.textSecondary, fontSize: "10px", fontWeight: "600" }}>{item.label}</div>
           </button>
         ))}
@@ -708,12 +733,14 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {/* Atividade recente */}
       {atividade.length > 0 && (
         <div style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
-          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px" }}>🕐 ATIVIDADE RECENTE</div>
+          <div style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", marginBottom: "12px", display: "inline-flex", alignItems: "center", gap: "5px" }}>
+            <History size={12} strokeWidth={ICON_STROKE} /> ATIVIDADE RECENTE
+          </div>
           {atividade.map((ev, i) => {
-            const icone = { ordem: "💰", alerta: "🔔", analise: "🤖", favorito: "⭐", relatorio: "📅" }[ev.categoria] || "•";
+            const Icone = ICONES_ATIVIDADE[ev.categoria] || History;
             return (
               <div key={i} style={{ display: "flex", gap: "10px", padding: "8px 0", borderBottom: i < atividade.length - 1 ? `1px solid ${cores.border}` : "none" }}>
-                <span style={{ fontSize: "15px" }}>{icone}</span>
+                <Icone size={15} strokeWidth={ICON_STROKE} color={cores.textSecondary} style={{ flexShrink: 0, marginTop: "1px" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ color: cores.textPrimary, fontSize: "12px" }}>
                     {ev.ativo && <strong>{ev.ativo}</strong>}{ev.ativo && " — "}{ev.descricao}
@@ -728,7 +755,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
 
       <div style={{ padding: "10px 14px", background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "10px" }}>
         <span style={{ color: cores.textSecondary, fontSize: "11px" }}>
-          ☰ Use o menu lateral para acessar todas as ferramentas · Gráfico baseado no IBOVESPA (BOVA11)
+          Use o menu lateral para acessar todas as ferramentas · Gráfico baseado no IBOVESPA (BOVA11)
         </span>
       </div>
     </div>

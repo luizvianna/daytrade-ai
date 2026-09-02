@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNotificacoes } from "./Notificacoes";
 import { authFetch } from "./supabaseClient";
+import {
+  Search, LineChart, Star, Square, Bot, DollarSign, RefreshCw,
+  Calendar, AlertTriangle, Ban, CheckCircle2, Zap,
+} from "lucide-react";
+
 const PROXY = "https://daytrade-proxy.onrender.com";
+const ICON_STROKE = 2.25;
+
 export const ACOES  = ["PETR4","VALE3","ITUB4","BBDC4","MGLU3","WEGE3","ABEV3","B3SA3","RENT3","SUZB3","GGBR4","EMBR3","RADL3","EQTL3","SBSP3","VIVT3","LREN3","HAPV3"];
 export const FIIS   = ["HGLG11","KNRI11","MXRF11","XPML11","BCFF11","VISC11","BRCO11","RBRF11","IRDM11","KNCR11"];
 export const ETFS   = ["IVVB11","BOVA11","HASH11","SMAL11","DIVO11","GOLD11","XFIX11","FIXA11"];
@@ -80,19 +87,20 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
   return (
     <div style={{ padding: isMobile ? "12px" : "20px", maxWidth: "620px", margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: "22px", marginTop: isMobile ? "16px" : "36px" }}>
-        <div style={{ fontSize: "44px", marginBottom: "10px" }}>📈</div>
+        <LineChart size={40} strokeWidth={ICON_STROKE} color="#00e5a0" style={{ marginBottom: "10px" }} />
         <h2 style={{ fontSize: "20px", fontWeight: "700", color: cores.textPrimary, marginBottom: "6px" }}>Negociar</h2>
         <p style={{ color: cores.textSecondary, fontSize: "13px" }}>Escolha um ativo para ver o gráfico e começar</p>
       </div>
 
       {/* Barra de pesquisa */}
-      <div style={{ marginBottom: "18px" }}>
+      <div style={{ marginBottom: "18px", position: "relative" }}>
+        <Search size={16} strokeWidth={ICON_STROKE} color={cores.textFaint} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
         <input
           value={busca}
           onChange={e => setBusca(e.target.value)}
-          placeholder="🔍 Buscar ativo (ex: PETR4, BTC-USD, HGLG11...)"
+          placeholder="Buscar ativo (ex: PETR4, BTC-USD, HGLG11...)"
           autoFocus
-          style={{ width: "100%", background: cores.card, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "12px", padding: "14px 16px", fontSize: "15px", fontFamily: "monospace" }}
+          style={{ width: "100%", background: cores.card, border: `1px solid ${cores.border}`, color: cores.textPrimary, borderRadius: "12px", padding: "14px 16px 14px 40px", fontSize: "15px", fontFamily: "monospace" }}
         />
       </div>
 
@@ -111,8 +119,8 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
                 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: i < resultadosBusca.length - 1 ? `1px solid ${cores.border}` : "none", cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <button onClick={(e) => { e.stopPropagation(); onToggleFavorito(a); }}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", padding: 0, color: favorito ? "#ffd60a" : cores.textFaint }}>
-                    {favorito ? "★" : "☆"}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                    <Star size={16} strokeWidth={ICON_STROKE} color={favorito ? "#ffd60a" : cores.textFaint} fill={favorito ? "#ffd60a" : "none"} />
                   </button>
                   <span style={{ fontFamily: "monospace", fontSize: "14px", fontWeight: "700", color: cores.textPrimary }}>{a}</span>
                   <span style={{ color: cor, fontSize: "10px", fontFamily: "monospace", background: `${cor}22`, border: `1px solid ${cor}44`, borderRadius: "4px", padding: "2px 6px" }}>{cat}</span>
@@ -143,8 +151,8 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", borderBottom: i < ativosCategoriaSelecionada.length - 1 ? `1px solid ${cores.border}` : "none", cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <button onClick={(e) => { e.stopPropagation(); onToggleFavorito(a); }}
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: "15px", padding: 0, color: favorito ? "#ffd60a" : cores.textFaint }}>
-                      {favorito ? "★" : "☆"}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex" }}>
+                      <Star size={15} strokeWidth={ICON_STROKE} color={favorito ? "#ffd60a" : cores.textFaint} fill={favorito ? "#ffd60a" : "none"} />
                     </button>
                     <span style={{ fontFamily: "monospace", fontSize: "13px", color: cores.textPrimary }}>{a}</span>
                   </div>
@@ -425,8 +433,8 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"12px" }}>
               <div style={{ color:cores.textFaint, fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em" }}>CONFIGURAÇÃO</div>
               <button onClick={()=>setAsset(null)}
-                style={{ background:"none", border:"none", color:corCategoria, fontSize:"11px", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", padding:0 }}>
-                🔍 Trocar ativo
+                style={{ background:"none", border:"none", color:corCategoria, fontSize:"11px", fontWeight:"600", cursor:"pointer", fontFamily:"inherit", padding:0, display:"flex", alignItems:"center", gap:"4px" }}>
+                <Search size={12} strokeWidth={ICON_STROKE} /> Trocar ativo
               </button>
             </div>
             <div style={{ marginBottom:"10px" }}>
@@ -470,17 +478,17 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
             {/* Botões de ação: Analisar com IA + Enviar Ordem, lado a lado */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", marginBottom:"8px" }}>
               <button onClick={()=>setRunning(r=>!r)}
-                style={{ background:running?"#ff4d6d22":`linear-gradient(135deg,${corCategoria},#006eff)`, color:running?"#ff4d6d":"#000", border:running?"1px solid #ff4d6d55":"none", borderRadius:"10px", padding:"13px 6px", fontSize:"13px", fontWeight:"700", cursor:"pointer" }}>
-                {running?"⏹ Parar IA":"🤖 Analisar IA"}
+                style={{ background:running?"#ff4d6d22":`linear-gradient(135deg,${corCategoria},#006eff)`, color:running?"#ff4d6d":"#000", border:running?"1px solid #ff4d6d55":"none", borderRadius:"10px", padding:"13px 6px", fontSize:"13px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
+                {running ? <><Square size={14} strokeWidth={ICON_STROKE} /> Parar IA</> : <><Bot size={14} strokeWidth={ICON_STROKE} /> Analisar IA</>}
               </button>
               <button onClick={()=>{setShowOrderForm(true);setOrderStep("form");}}
-                style={{ background:cores.cardInner, color:"#00e5a0", border:"1px solid #00e5a055", borderRadius:"10px", padding:"13px 6px", fontSize:"13px", fontWeight:"700", cursor:"pointer" }}>
-                💰 Enviar Ordem
+                style={{ background:cores.cardInner, color:"#00e5a0", border:"1px solid #00e5a055", borderRadius:"10px", padding:"13px 6px", fontSize:"13px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
+                <DollarSign size={14} strokeWidth={ICON_STROKE} /> Enviar Ordem
               </button>
             </div>
             <button onClick={()=>fetchCandles(asset,interval)}
-              style={{ width:"100%", background:cores.cardInner, border:`1px solid ${cores.border}`, color:cores.textSecondary, borderRadius:"8px", padding:"9px", fontSize:"12px", cursor:"pointer" }}>
-              🔄 Atualizar
+              style={{ width:"100%", background:cores.cardInner, border:`1px solid ${cores.border}`, color:cores.textSecondary, borderRadius:"8px", padding:"9px", fontSize:"12px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
+              <RefreshCw size={13} strokeWidth={ICON_STROKE} /> Atualizar
             </button>
           </div>
           {logs[0]&&(
@@ -488,16 +496,16 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
               <div style={{ color:cores.textFaint, fontSize:"9px", fontFamily:"monospace", letterSpacing:"0.1em", marginBottom:"8px" }}>ÚLTIMO SINAL</div>
               <div style={{ marginBottom:"6px" }}><Badge type={logs[0].signal}/></div>
               <p style={{ color:cores.textSecondary, fontSize:"12px", lineHeight:"1.6", margin:0 }}>{logs[0].reasoning}</p>
-              {logs[0].horizonte&&<div style={{ color:cores.textFaint, fontSize:"10px", marginTop:"6px", fontFamily:"monospace" }}>📅 {logs[0].horizonte}</div>}
-              <div style={{ color:cores.textFaint, fontSize:"9px", marginTop:"8px", fontFamily:"monospace", borderTop:`1px solid ${cores.border}`, paddingTop:"6px" }}>
-                ⚠️ Análise gerada por IA — pode conter erros. Não é recomendação personalizada de investimento.
+              {logs[0].horizonte&&<div style={{ color:cores.textFaint, fontSize:"10px", marginTop:"6px", fontFamily:"monospace", display:"flex", alignItems:"center", gap:"4px" }}><Calendar size={11} strokeWidth={ICON_STROKE} /> {logs[0].horizonte}</div>}
+              <div style={{ color:cores.textFaint, fontSize:"9px", marginTop:"8px", fontFamily:"monospace", borderTop:`1px solid ${cores.border}`, paddingTop:"6px", display:"flex", alignItems:"center", gap:"5px" }}>
+                <AlertTriangle size={11} strokeWidth={ICON_STROKE} /> Análise gerada por IA — pode conter erros. Não é recomendação personalizada de investimento.
               </div>
             </div>
           )}
           <div style={{ background:cores.card, border:`1px solid ${cores.border}`, borderRadius:"12px", padding:"14px" }}>
             <button onClick={()=>setShowPrices(p=>!p)}
               style={{ width:"100%", background:"none", border:"none", color:cores.textFaint, fontSize:"10px", fontFamily:"monospace", letterSpacing:"0.1em", cursor:"pointer", display:"flex", justifyContent:"space-between", padding:0 }}>
-              <span>MERCADO AO VIVO ⚡</span><span>{showPrices?"▲":"▼"}</span>
+              <span style={{ display:"flex", alignItems:"center", gap:"5px" }}>MERCADO AO VIVO <Zap size={11} strokeWidth={ICON_STROKE} /></span><span>{showPrices?"▲":"▼"}</span>
             </button>
             {(showPrices||!isMobile)&&(
               <div style={{ marginTop:"10px" }}>
@@ -525,16 +533,16 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
                   <span style={{ color:corCategoria, fontSize:"10px", fontFamily:"monospace", background:`${corCategoria}22`, border:`1px solid ${corCategoria}44`, borderRadius:"4px", padding:"2px 6px" }}>{categoria}</span>
                   <span style={{ color:cores.textFaint, fontSize:"9px", fontFamily:"monospace" }}>{asset}·{INTERVALS.find(i=>i.value===interval)?.label}</span>
                   <button onClick={()=>alternarFavorito(asset)}
-                    style={{ background:"none", border:"none", cursor:"pointer", fontSize:"15px", padding:0, color: watchlist.includes(asset) ? "#ffd60a" : cores.textFaint }}>
-                    {watchlist.includes(asset) ? "★" : "☆"}
+                    style={{ background:"none", border:"none", cursor:"pointer", padding:0, display:"flex" }}>
+                    <Star size={15} strokeWidth={ICON_STROKE} color={watchlist.includes(asset) ? "#ffd60a" : cores.textFaint} fill={watchlist.includes(asset) ? "#ffd60a" : "none"} />
                   </button>
                 </div>
                 <div style={{ color:priceColor, fontSize:isMobile?"20px":"24px", fontWeight:"700", fontFamily:"monospace", marginTop:"4px" }}>{currentPrice?`R$ ${currentPrice.toFixed(2)}`:"..."}</div>
                 {lastUpdate&&<div style={{ color:cores.textFaint, fontSize:"10px", fontFamily:"monospace" }}>{lastUpdate}</div>}
               </div>
               <div style={{ textAlign:"right" }}>
-                {loadingData&&<div style={{ color:cores.textSecondary, fontSize:"11px" }}>🔄</div>}
-                {loadingAI&&<div style={{ color:corCategoria, fontSize:"11px" }}>🤖 analisando...</div>}
+                {loadingData&&<RefreshCw size={13} strokeWidth={ICON_STROKE} color={cores.textSecondary} className="spin" />}
+                {loadingAI&&<div style={{ color:corCategoria, fontSize:"11px", display:"flex", alignItems:"center", gap:"4px" }}><Bot size={12} strokeWidth={ICON_STROKE} /> analisando...</div>}
               </div>
             </div>
             <CandleChart candles={candles} width={isMobile?340:700} height={isMobile?140:200} linhaBase={cores.linhaBase}/>
@@ -610,24 +618,28 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
                     border: `1px solid ${alertaPerfilRisco.nivel==="alto" ? "#ff4d6d44" : "#ffd60a44"}`,
                     borderRadius:"8px", padding:"10px", marginBottom:"12px",
                     color: alertaPerfilRisco.nivel==="alto" ? "#ff4d6d" : "#ffd60a",
-                    fontSize:"12px", lineHeight:"1.5", fontWeight:"600"
+                    fontSize:"12px", lineHeight:"1.5", fontWeight:"600", display:"flex", gap:"8px"
                   }}>
-                    {alertaPerfilRisco.nivel==="alto" ? "🚫" : "⚠️"} {alertaPerfilRisco.texto}
-                    {alertaPerfilRisco.nivel==="alto" && (
-                      <label style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"10px", fontWeight:"400", fontSize:"11px", cursor:"pointer" }}>
-                        <input type="checkbox" checked={riscoConfirmado} onChange={e=>setRiscoConfirmado(e.target.checked)} />
-                        Entendo o risco e quero continuar mesmo assim
-                      </label>
-                    )}
+                    {alertaPerfilRisco.nivel==="alto" ? <Ban size={15} strokeWidth={ICON_STROKE} style={{flexShrink:0, marginTop:"1px"}} /> : <AlertTriangle size={15} strokeWidth={ICON_STROKE} style={{flexShrink:0, marginTop:"1px"}} />}
+                    <div>
+                      {alertaPerfilRisco.texto}
+                      {alertaPerfilRisco.nivel==="alto" && (
+                        <label style={{ display:"flex", alignItems:"center", gap:"8px", marginTop:"10px", fontWeight:"400", fontSize:"11px", cursor:"pointer" }}>
+                          <input type="checkbox" checked={riscoConfirmado} onChange={e=>setRiscoConfirmado(e.target.checked)} />
+                          Entendo o risco e quero continuar mesmo assim
+                        </label>
+                      )}
+                    </div>
                   </div>
                 )}
                 {orderMsg && (
-                  <div style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d44", borderRadius:"8px", padding:"10px", marginBottom:"12px", color:"#ff4d6d", fontSize:"12px" }}>
-                    ⚠️ {orderMsg}
+                  <div style={{ background:"#ff4d6d15", border:"1px solid #ff4d6d44", borderRadius:"8px", padding:"10px", marginBottom:"12px", color:"#ff4d6d", fontSize:"12px", display:"flex", gap:"6px" }}>
+                    <AlertTriangle size={13} strokeWidth={ICON_STROKE} style={{flexShrink:0, marginTop:"1px"}} /> {orderMsg}
                   </div>
                 )}
-                <div style={{ background:"#ffd60a11", border:"1px solid #ffd60a33", borderRadius:"8px", padding:"10px", marginBottom:"14px", color:"#ffd60a", fontSize:"11px", lineHeight:"1.5" }}>
-                  ⚠️ Ordem fica pendente até confirmação de execução. Análise da IA (se usada) pode conter erros e não é recomendação personalizada.
+                <div style={{ background:"#ffd60a11", border:"1px solid #ffd60a33", borderRadius:"8px", padding:"10px", marginBottom:"14px", color:"#ffd60a", fontSize:"11px", lineHeight:"1.5", display:"flex", gap:"6px" }}>
+                  <AlertTriangle size={13} strokeWidth={ICON_STROKE} style={{flexShrink:0, marginTop:"1px"}} />
+                  <span>Ordem fica pendente até confirmação de execução. Análise da IA (se usada) pode conter erros e não é recomendação personalizada.</span>
                 </div>
                 <button
                   disabled={!orderQtd || (orderPrecoTipo==="limite" && !orderPrecoLimite) || (alertaPerfilRisco?.nivel==="alto" && !riscoConfirmado)}
@@ -669,7 +681,7 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
             )}
             {orderStep==="confirmado" && (
               <div style={{ textAlign:"center", padding:"10px 0" }}>
-                <div style={{ fontSize:"40px", marginBottom:"12px" }}>✅</div>
+                <CheckCircle2 size={40} strokeWidth={ICON_STROKE} color="#00e5a0" style={{ marginBottom:"12px" }} />
                 <h3 style={{ color:cores.textPrimary, fontSize:"16px", marginBottom:"8px" }}>Ordem enviada!</h3>
                 <p style={{ color:cores.textSecondary, fontSize:"13px", marginBottom:"20px" }}>
                   Sua ordem de {orderTipo} de {orderQtd} {asset} está <strong style={{color:"#ffd60a"}}>pendente</strong>. Você pode acompanhar o status na tela de Histórico.
@@ -683,8 +695,10 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
           </div>
         </div>
       )}
-      <div style={{ marginTop:"12px", padding:"10px 14px", background:cores.card, border:"1px solid #ff4d6d22", borderRadius:"10px" }}>
-        <span style={{ color:cores.textSecondary, fontSize:"11px" }}>⚠️ Sistema educacional · Ações · FIIs · ETFs · Cripto · Dados: Brapi ⚡</span>
+      <div style={{ marginTop:"12px", padding:"10px 14px", background:cores.card, border:"1px solid #ff4d6d22", borderRadius:"10px", display:"flex", alignItems:"center", gap:"6px" }}>
+        <AlertTriangle size={12} strokeWidth={ICON_STROKE} color={cores.textSecondary} />
+        <span style={{ color:cores.textSecondary, fontSize:"11px" }}>Sistema educacional · Ações · FIIs · ETFs · Cripto · Dados: Brapi</span>
+        <Zap size={11} strokeWidth={ICON_STROKE} color={cores.textSecondary} />
       </div>
     </div>
   );
