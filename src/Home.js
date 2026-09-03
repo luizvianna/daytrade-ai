@@ -234,7 +234,7 @@ function EditarContaModal({ conta, onSave, onClose, cores }) {
         </div>
 
         <button onClick={salvar}
-          style={{ width: "100%", background: "linear-gradient(135deg,#00e5a0,#00b07a)", color: "#000", border: "none", borderRadius: "10px", padding: "13px", fontSize: "14px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+          style={{ width: "100%", background: "linear-gradient(135deg,#8b5cf6,#006eff)", color: "#000", border: "none", borderRadius: "10px", padding: "13px", fontSize: "14px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
           <Save size={16} strokeWidth={ICON_STROKE} /> Salvar
         </button>
       </div>
@@ -398,7 +398,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       {/* Header com saudação e perfil */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "linear-gradient(135deg,#00e5a0,#006eff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", fontWeight: "700", color: "#000" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "linear-gradient(135deg,#8b5cf6,#006eff)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", fontWeight: "700", color: "#000" }}>
             {(perfil?.nome || "I")[0].toUpperCase()}
           </div>
           <div>
@@ -453,7 +453,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
                 style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", cursor: feito ? "default" : "pointer", opacity: feito ? 0.55 : 1 }}>
                 {feito ? <CheckCircle2 size={16} strokeWidth={ICON_STROKE} color="#00e5a0" /> : <Icone size={16} strokeWidth={ICON_STROKE} color={cores.textSecondary} />}
                 <span style={{ color: cores.textPrimary, fontSize: "13px", textDecoration: feito ? "line-through" : "none", flex: 1 }}>{item.label}</span>
-                {!feito && <span style={{ color: "#00e5a0", fontSize: "12px" }}>Ir →</span>}
+                {!feito && <span style={{ color: "#8b5cf6", fontSize: "12px" }}>Ir →</span>}
               </div>
             );
           })}
@@ -526,7 +526,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           <div style={{ display: "flex", gap: "4px", background: cores.cardInner, borderRadius: "8px", padding: "3px", flexWrap: "wrap" }}>
             {PERIODOS.map(p => (
               <button key={p.id} onClick={() => setPeriodo(p.id)}
-                style={{ background: periodo === p.id ? "#00e5a022" : "transparent", border: periodo === p.id ? "1px solid #00e5a044" : "1px solid transparent", color: periodo === p.id ? "#00e5a0" : cores.textSecondary, borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+                style={{ background: periodo === p.id ? "#8b5cf622" : "transparent", border: periodo === p.id ? "1px solid #8b5cf644" : "1px solid transparent", color: periodo === p.id ? "#8b5cf6" : cores.textSecondary, borderRadius: "6px", padding: "5px 9px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
                 {p.label}
               </button>
             ))}
@@ -582,7 +582,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
             <span style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "15px" }}>Conta Digital</span>
           </div>
           <button onClick={() => setShowEditModal(true)}
-            style={{ background: "#00e5a015", border: "1px solid #00e5a033", color: "#00e5a0", borderRadius: "8px", padding: "6px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
+            style={{ background: "#8b5cf615", border: "1px solid #8b5cf633", color: "#8b5cf6", borderRadius: "8px", padding: "6px 12px", fontSize: "11px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}>
             <Pencil size={11} strokeWidth={ICON_STROKE} /> Editar
           </button>
         </div>
@@ -631,7 +631,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
               <BarChart3 size={12} strokeWidth={ICON_STROKE} /> ALOCAÇÃO: IDEAL vs REAL
             </span>
             <button onClick={() => setShowEditModal(true)}
-              style={{ background: "none", border: "none", color: "#00e5a0", fontSize: "11px", cursor: "pointer" }}>
+              style={{ background: "none", border: "none", color: "#8b5cf6", fontSize: "11px", cursor: "pointer" }}>
               {totalAlocadoReal > 0 ? "Editar →" : "Informar valores →"}
             </button>
           </div>
@@ -679,7 +679,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "16px" }}>
         <button onClick={() => setPage("dashboard")}
           style={{ background: cores.card, border: `1px solid ${cores.border}`, borderRadius: "14px", padding: "18px", textAlign: "left", cursor: "pointer" }}>
-          <LineChart size={24} strokeWidth={ICON_STROKE} color="#00e5a0" style={{ marginBottom: "8px" }} />
+          <LineChart size={24} strokeWidth={ICON_STROKE} color="#8b5cf6" style={{ marginBottom: "8px" }} />
           <div style={{ color: cores.textPrimary, fontWeight: "700", fontSize: "14px", marginBottom: "4px" }}>Negociar</div>
           <div style={{ color: cores.textSecondary, fontSize: "11px", lineHeight: "1.5" }}>Daytrade · Ações, FIIs, ETFs, Cripto em tempo real</div>
         </button>
@@ -697,7 +697,7 @@ export default function Home({ setPage, tema = "escuro", onAbrirAtivo }) {
           <span style={{ color: cores.textSecondary, fontSize: "10px", fontFamily: "monospace", letterSpacing: "0.1em", display: "inline-flex", alignItems: "center", gap: "5px" }}>
             MERCADO AGORA <Zap size={11} strokeWidth={ICON_STROKE} />
           </span>
-          <button onClick={() => setPage("dashboard")} style={{ background: "none", border: "none", color: "#00e5a0", fontSize: "11px", cursor: "pointer" }}>Ver tudo →</button>
+          <button onClick={() => setPage("dashboard")} style={{ background: "none", border: "none", color: "#8b5cf6", fontSize: "11px", cursor: "pointer" }}>Ver tudo →</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" }}>
           {ATIVOS_RESUMO.map(t => {

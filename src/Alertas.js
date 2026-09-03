@@ -363,7 +363,7 @@ export default function Alertas({ tema = "escuro" }) {
       <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <h1 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "4px", color: cores.textPrimary, display: "flex", alignItems: "center", gap: "8px" }}>
-            <Bell size={20} strokeWidth={ICON_STROKE} color="#00e5a0" /> Alertas de Preço
+            <Bell size={20} strokeWidth={ICON_STROKE} color="#8b5cf6" /> Alertas de Preço
           </h1>
           <p style={{ color: cores.textFaint, fontSize: "12px" }}>Monitoramento automático a cada 30 segundos</p>
         </div>
@@ -395,7 +395,7 @@ export default function Alertas({ tema = "escuro" }) {
           { id: "historico", label: `Histórico (${alertasDisparados.length})`, Icone: History },
         ].map(tab => (
           <button key={tab.id} className="tab-btn" onClick={() => setAba(tab.id)}
-            style={{ flex: 1, background: aba === tab.id ? "#00e5a015" : "transparent", border: aba === tab.id ? "1px solid #00e5a033" : "1px solid transparent", color: aba === tab.id ? "#00e5a0" : cores.textFaint, borderRadius: "7px", padding: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            style={{ flex: 1, background: aba === tab.id ? "#8b5cf615" : "transparent", border: aba === tab.id ? "1px solid #8b5cf633" : "1px solid transparent", color: aba === tab.id ? "#8b5cf6" : cores.textFaint, borderRadius: "7px", padding: "8px", fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
             <tab.Icone size={13} strokeWidth={ICON_STROKE} /> {tab.label}
           </button>
         ))}
@@ -412,7 +412,7 @@ export default function Alertas({ tema = "escuro" }) {
               <BellOff size={36} strokeWidth={ICON_STROKE} color={cores.textFaint} style={{ marginBottom: "12px" }} />
               <div style={{ color: cores.textFaint, fontSize: "14px", marginBottom: "8px" }}>Nenhum alerta ativo</div>
               <button onClick={() => setAba("criar")}
-                style={{ background: "linear-gradient(135deg,#00e5a0,#00b07a)", color: "#000", border: "none", borderRadius: "8px", padding: "10px 20px", fontSize: "13px", fontWeight: "700", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                style={{ background: "linear-gradient(135deg,#8b5cf6,#006eff)", color: "#000", border: "none", borderRadius: "8px", padding: "10px 20px", fontSize: "13px", fontWeight: "700", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <Plus size={14} strokeWidth={ICON_STROKE} /> Criar primeiro alerta
               </button>
             </div>
@@ -441,7 +441,7 @@ export default function Alertas({ tema = "escuro" }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               {[{ v: "preco_exato", l: "Preço exato", Icone: DollarSign }, { v: "variacao_pct", l: "Variação %", Icone: Percent }].map(t => (
                 <button key={t.v} onClick={() => setNovoTipo(t.v)}
-                  style={{ background: novoTipo === t.v ? "#00e5a022" : cores.cardInner, border: `1px solid ${novoTipo === t.v ? "#00e5a0" : cores.border}`, color: novoTipo === t.v ? "#00e5a0" : cores.textSecondary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                  style={{ background: novoTipo === t.v ? "#8b5cf622" : cores.cardInner, border: `1px solid ${novoTipo === t.v ? "#8b5cf6" : cores.border}`, color: novoTipo === t.v ? "#8b5cf6" : cores.textSecondary, borderRadius: "8px", padding: "10px", fontSize: "13px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                   <t.Icone size={14} strokeWidth={ICON_STROKE} /> {t.l}
                 </button>
               ))}
@@ -491,7 +491,7 @@ export default function Alertas({ tema = "escuro" }) {
           </div>
 
           <button onClick={criarAlerta} disabled={!novoValor || salvando}
-            style={{ width: "100%", background: !novoValor ? cores.border : "linear-gradient(135deg,#00e5a0,#00b07a)", color: !novoValor ? cores.textFaint : "#000", border: "none", borderRadius: "10px", padding: "14px", fontSize: "15px", fontWeight: "700", cursor: !novoValor ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            style={{ width: "100%", background: !novoValor ? cores.border : "linear-gradient(135deg,#8b5cf6,#006eff)", color: !novoValor ? cores.textFaint : "#000", border: "none", borderRadius: "10px", padding: "14px", fontSize: "15px", fontWeight: "700", cursor: !novoValor ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
             {salvando
               ? <><Loader2 size={16} strokeWidth={ICON_STROKE} className="spin" /> Salvando...</>
               : <><Bell size={16} strokeWidth={ICON_STROKE} /> Criar Alerta</>}
