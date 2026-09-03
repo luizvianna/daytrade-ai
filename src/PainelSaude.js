@@ -62,7 +62,7 @@ export default function PainelSaude({ tema = "escuro" }) {
       <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
         <div>
           <h1 style={{ fontSize: "20px", fontWeight: "700", color: cores.textPrimary, marginBottom: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Activity size={20} strokeWidth={ICON_STROKE} color="#00e5a0" /> Painel de Saúde
+            <Activity size={20} strokeWidth={ICON_STROKE} color="#8b5cf6" /> Painel de Saúde
           </h1>
           <p style={{ color: cores.textFaint, fontSize: "12px" }}>
             {ultimaChecagem ? `Última checagem: ${ultimaChecagem.toLocaleTimeString("pt-BR")}` : "Testando conexões reais, não só se as chaves existem"}

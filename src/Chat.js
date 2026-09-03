@@ -41,7 +41,7 @@ function TypingIndicator({ cores }) {
     <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "12px 16px", background: cores.card, borderRadius: "12px", width: "fit-content", marginBottom: "12px" }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
-          width: "7px", height: "7px", borderRadius: "50%", background: "#00e5a0",
+          width: "7px", height: "7px", borderRadius: "50%", background: "#8b5cf6",
           animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
         }} />
       ))}
@@ -55,13 +55,13 @@ function Message({ msg, cores }) {
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: "12px" }}>
       {!isUser && (
-        <div style={{ width: "30px", height: "30px", background: "linear-gradient(135deg,#00e5a0,#006eff)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", marginRight: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
+        <div style={{ width: "30px", height: "30px", background: "linear-gradient(135deg,#8b5cf6,#006eff)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", marginRight: "8px", flexShrink: 0, alignSelf: "flex-end" }}>
           <Bot size={16} strokeWidth={ICON_STROKE} color="#000" />
         </div>
       )}
       <div style={{
         maxWidth: "80%",
-        background: isUser ? "linear-gradient(135deg,#00e5a0,#00b07a)" : cores.card,
+        background: isUser ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : cores.card,
         border: isUser ? "none" : `1px solid ${cores.border}`,
         color: isUser ? "#000" : cores.textPrimary,
         borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
@@ -282,7 +282,7 @@ FORMATO DE RESPOSTA:
       <div style={{ padding: "14px 0", borderBottom: `1px solid ${cores.border}`, marginBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "2px", color: cores.textPrimary, display: "flex", alignItems: "center", gap: "8px" }}>
-            <MessageCircle size={17} strokeWidth={ICON_STROKE} color="#00e5a0" /> Chat com IA de Investimentos
+            <MessageCircle size={17} strokeWidth={ICON_STROKE} color="#8b5cf6" /> Chat com IA de Investimentos
           </h2>
           <p style={{ color: cores.textFaint, fontSize: "11px" }}>Ações · FIIs · ETFs · Cripto · Renda Fixa · Curto, Médio e Longo Prazo</p>
         </div>
@@ -346,7 +346,7 @@ FORMATO DE RESPOSTA:
             onInput={e => { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
           />
           <button className="send-btn" onClick={() => sendMessage()} disabled={loading || !input.trim()}
-            style={{ background: loading || !input.trim() ? cores.border : "linear-gradient(135deg,#00e5a0,#00b07a)", color: loading || !input.trim() ? cores.textFaint : "#000", border: "none", borderRadius: "12px", padding: "12px 16px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            style={{ background: loading || !input.trim() ? cores.border : "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: loading || !input.trim() ? cores.textFaint : "#000", border: "none", borderRadius: "12px", padding: "12px 16px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", transition: "all 0.2s", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {loading ? <Loader2 size={18} strokeWidth={ICON_STROKE} className="spin" /> : <Send size={18} strokeWidth={ICON_STROKE} />}
           </button>
         </div>

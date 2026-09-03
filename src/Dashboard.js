@@ -87,7 +87,7 @@ function SeletorAtivo({ cores, isMobile, busca, setBusca, resultadosBusca, allPr
   return (
     <div style={{ padding: isMobile ? "12px" : "20px", maxWidth: "620px", margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: "22px", marginTop: isMobile ? "16px" : "36px" }}>
-        <LineChart size={40} strokeWidth={ICON_STROKE} color="#00e5a0" style={{ marginBottom: "10px" }} />
+        <LineChart size={40} strokeWidth={ICON_STROKE} color="#8b5cf6" style={{ marginBottom: "10px" }} />
         <h2 style={{ fontSize: "20px", fontWeight: "700", color: cores.textPrimary, marginBottom: "6px" }}>Negociar</h2>
         <p style={{ color: cores.textSecondary, fontSize: "13px" }}>Escolha um ativo para ver o gráfico e começar</p>
       </div>
@@ -482,7 +482,7 @@ export default function Dashboard({ tema = "escuro", ativoInicial, limparAtivoIn
                 {running ? <><Square size={14} strokeWidth={ICON_STROKE} /> Parar IA</> : <><Bot size={14} strokeWidth={ICON_STROKE} /> Analisar IA</>}
               </button>
               <button onClick={()=>{setShowOrderForm(true);setOrderStep("form");}}
-                style={{ background:cores.cardInner, color:"#00e5a0", border:"1px solid #00e5a055", borderRadius:"10px", padding:"13px 6px", fontSize:"13px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
+                style={{ background:cores.cardInner, color:"#8b5cf6", border:"1px solid #8b5cf655", borderRadius:"10px", padding:"13px 6px", fontSize:"13px", fontWeight:"700", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px" }}>
                 <DollarSign size={14} strokeWidth={ICON_STROKE} /> Enviar Ordem
               </button>
             </div>
